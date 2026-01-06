@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>極簡記帳 V9 - 發票載具串接版</title>
+    <title>極簡記帳 V10 - 載具與雲端同步版</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -12,9 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Canvas Confetti 煙火特效庫 -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- HTML5-QRCode 真實掃描庫 -->
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- JsBarcode 真實條碼生成庫 -->
+    <!-- JsBarcode 真實條碼生成庫 (保留載具顯示功能) -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     
     <style>
@@ -30,9 +28,6 @@
         .modal:not(.hidden) { opacity: 1; pointer-events: auto; }
         /* 目標達成金邊特效 */
         .goal-completed { border: 2px solid #F59E0B; background: linear-gradient(to bottom right, #ffffff, #fffbeb); }
-        /* 掃描器樣式調整 */
-        #reader { width: 100%; border-radius: 1rem; overflow: hidden; background: black; }
-        #reader video { object-fit: cover; border-radius: 1rem; }
         /* 同步旋轉動畫 */
         @keyframes spin-slow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .animate-spin-slow { animation: spin-slow 2s linear infinite; }
@@ -100,18 +95,14 @@
                     <div class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 left-1" id="toggleBg"></div>
                 </div>
 
-                <!-- 帳戶與掃描 -->
+                <!-- 帳戶與同步 -->
                 <div class="flex gap-2 mb-2">
                     <div class="flex-1">
                         <select id="accountSelect" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm font-bold py-2 px-3 rounded-xl outline-none"></select>
                     </div>
-                    <!-- 同步按鈕 (新功能) -->
-                    <button onclick="syncInvoices()" id="btnSync" class="bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 rounded-xl flex items-center justify-center gap-1 shadow-sm hover:bg-indigo-100 active:scale-95 transition">
-                        <span class="text-lg">☁️</span> 
-                    </button>
-                    <!-- 掃描按鈕 (真實功能) -->
-                    <button onclick="startRealScan()" class="bg-gray-900 text-white px-3 rounded-xl flex items-center justify-center gap-1 shadow hover:bg-black active:scale-95 transition">
-                        <span>📷</span> <span class="text-xs font-bold">掃發票</span>
+                    <!-- 同步按鈕 -->
+                    <button onclick="syncInvoices()" id="btnSync" class="bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 rounded-xl flex items-center justify-center gap-2 shadow-sm hover:bg-indigo-100 active:scale-95 transition w-1/3">
+                        <span class="text-lg">☁️</span> <span class="text-xs font-bold">同步發票</span>
                     </button>
                 </div>
 
@@ -213,21 +204,6 @@
 
     <!-- === Modals 彈窗區域 === -->
 
-    <!-- 真實掃描 Modal -->
-    <div id="scanModal" class="modal hidden fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
-        <div class="w-full max-w-sm flex flex-col items-center relative">
-            <h3 class="text-white text-lg font-bold mb-4">掃描發票 QR Code</h3>
-            
-            <!-- 掃描器容器 -->
-            <div id="reader" class="w-full aspect-square bg-black rounded-2xl overflow-hidden border-2 border-white/20"></div>
-            
-            <div class="mt-6 text-center">
-                <p class="text-white/70 text-sm mb-4">請將鏡頭對準電子發票左側的 QR Code</p>
-                <button onclick="stopScan()" class="bg-white/20 text-white border border-white/30 px-8 py-3 rounded-full font-bold hover:bg-white/30 transition">取消掃描</button>
-            </div>
-        </div>
-    </div>
-
     <!-- 同步中 Modal -->
     <div id="syncModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl">
@@ -291,7 +267,7 @@
                     <div class="text-right text-xs font-bold mt-2" id="totalRatioDisplay">總計: 100%</div>
                 </div>
 
-                <!-- 2. 載具設定 (更新 UI) -->
+                <!-- 2. 載具設定 -->
                 <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
                     <p class="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1">
                         📱 發票載具連結
@@ -427,9 +403,6 @@
         let selectedIcon = availableIcons[0];
         let currentTransType = 'expense';
         let selectedCatId = null;
-        
-        // 掃描器變數
-        let html5QrcodeScanner = null;
 
         // --- 初始化 ---
         window.onload = () => {
@@ -448,7 +421,7 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem('v9_app_data'); // Updated Key for V9
+            const saved = localStorage.getItem('v10_app_data'); // Updated Key for V10
             if(saved) {
                 const parsed = JSON.parse(saved);
                 appData = { ...appData, ...parsed };
@@ -458,7 +431,7 @@
         }
 
         function saveData() {
-            localStorage.setItem('v9_app_data', JSON.stringify(appData));
+            localStorage.setItem('v10_app_data', JSON.stringify(appData));
         }
 
         function checkReminder() {
@@ -634,129 +607,6 @@
             closeSettings();
             refreshUI();
             checkGoals(true); 
-        }
-
-        // --- 真實掃描功能 (解析發票) ---
-        async function startRealScan() {
-            document.getElementById('scanModal').classList.remove('hidden');
-            
-            // 確保先清除舊的實例，避免重複開啟導致錯誤
-            if(html5QrcodeScanner) {
-                try {
-                    await html5QrcodeScanner.clear();
-                } catch(e) {
-                    console.log("Cleanup error", e);
-                }
-                html5QrcodeScanner = null;
-            }
-
-            // 初始化掃描器
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader", 
-                { 
-                    fps: 15, // 提高 FPS 讓掃描更流暢
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0,
-                    formatsToSupport: [ 
-                        Html5QrcodeSupportedFormats.QR_CODE,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.EAN_13 
-                    ],
-                    // 關閉一些可能導致問題的實驗性功能，或者保留如果是必要的
-                    experimentalFeatures: {
-                        useBarCodeDetectorIfSupported: true
-                    },
-                    rememberLastUsedCamera: true
-                },
-                /* verbose= */ false
-            );
-            
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            playScanSound(); // 播放音效
-            stopScan();
-            console.log("Scan Result:", decodedText);
-            
-            let noteText = "";
-            let parsedAmount = 0;
-            let parsedDateStr = "";
-
-            // 1. 判斷是否為手機載具 (Code 39 格式，通常是 / 開頭 8 碼)
-            // 有些掃描器可能不會讀到 /，所以我們檢查是否符合載具格式
-            if (decodedText.startsWith('/') || (decodedText.length === 7 && /^[A-Z0-9]+$/.test(decodedText))) {
-                 // 如果掃到的是載具
-                 const carrierCode = decodedText.startsWith('/') ? decodedText : '/' + decodedText;
-                 
-                 noteText = `載具: ${carrierCode}`;
-                 alert(`✅ 載具掃描成功！\n號碼: ${carrierCode}`);
-                 
-                 // 如果還沒設定載具，自動存入設定
-                 if(!appData.settings.carrierCode) {
-                     appData.settings.carrierCode = carrierCode;
-                     saveData();
-                 }
-                 // 自動勾選「存入手機載具」
-                 document.getElementById('useCarrier').checked = true;
-            } 
-            // 2. 判斷是否為電子發票 (QR Code 格式: 77碼)
-            else if(decodedText.length === 77) {
-                 // 嘗試解析
-                 const invNum = decodedText.substring(0, 10); // 發票號碼
-                 const invDateROC = decodedText.substring(10, 17); // 日期 (1120101)
-                 // 金額通常在第 22-29 碼 (8位 16進制 SalesAmount) 或 30-37 (TotalAmount)
-                 const amountHex = decodedText.substring(29, 37); 
-                 
-                 // 轉換日期
-                 const year = parseInt(invDateROC.substring(0, 3)) + 1911;
-                 const month = invDateROC.substring(3, 5);
-                 const day = invDateROC.substring(5, 7);
-                 parsedDateStr = `${year}/${month}/${day}`;
-
-                 // 轉換金額 (16進位轉10進位)
-                 parsedAmount = parseInt(amountHex, 16);
-                 
-                 noteText = `發票: ${invNum}`;
-                 alert(`✅ 發票掃描成功！\n號碼: ${invNum}\n日期: ${parsedDateStr}\n金額: $${parsedAmount}`);
-            } else {
-                 // 一般 QR Code (如果不是標準發票)
-                 noteText = "掃描: " + decodedText;
-                 alert(`掃描成功！內容: ${decodedText}`);
-            }
-
-            // 填入欄位
-            if(noteText) document.getElementById('noteInput').value = noteText;
-            if(parsedAmount > 0) document.getElementById('amountInput').value = parsedAmount;
-        }
-
-        function onScanFailure(error) {
-            // console.warn(`Code scan error = ${error}`);
-        }
-
-        async function stopScan() {
-            document.getElementById('scanModal').classList.add('hidden');
-            if(html5QrcodeScanner) {
-                try {
-                    await html5QrcodeScanner.clear();
-                    html5QrcodeScanner = null;
-                } catch(error) {
-                    console.error("Failed to clear html5QrcodeScanner. ", error);
-                }
-            }
-        }
-
-        function playScanSound() {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = context.createOscillator();
-            const gain = context.createGain();
-            osc.type = "sine";
-            osc.frequency.value = 1500;
-            gain.gain.value = 0.1;
-            osc.connect(gain);
-            gain.connect(context.destination);
-            osc.start();
-            setTimeout(() => osc.stop(), 100);
         }
 
         // --- 2. 帳戶管理 ---
