@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>極簡記帳 V9 - 發票載具串接版</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js 圖表庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti 煙火特效庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- HTML5-QRCode 真實掃描庫 -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- JsBarcode 真實條碼生成庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #F3F4F6; touch-action: manipulation; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* 分頁與 Modal 動畫 */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal { transition: opacity 0.3s ease-in-out; }
+        .modal.hidden { opacity: 0; pointer-events: none; }
+        .modal:not(.hidden) { opacity: 1; pointer-events: auto; }
+        /* 目標達成金邊特效 */
+        .goal-completed { border: 2px solid #F59E0B; background: linear-gradient(to bottom right, #ffffff, #fffbeb); }
+        /* 掃描器樣式調整 */
+        #reader { width: 100%; border-radius: 1rem; overflow: hidden; background: black; }
+        #reader video { object-fit: cover; border-radius: 1rem; }
+        /* 同步旋轉動畫 */
+        @keyframes spin-slow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .animate-spin-slow { animation: spin-slow 2s linear infinite; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col max-w-md mx-auto bg-white shadow-2xl overflow-hidden relative">
+
+    <!-- 1. 頂部總覽區塊 -->
+    <header class="bg-gray-900 text-white p-5 rounded-b-3xl shadow-lg z-20 shrink-0">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-lg font-bold tracking-wide">我的財務管家</h1>
+            <button onclick="openSettings()" class="text-2xl p-1 hover:rotate-90 transition duration-300">⚙️</button>
+        </div>
+        <div class="text-center">
+            <p class="text-gray-400 text-sm mb-1">總資產</p>
+            <div class="text-4xl font-bold text-white tracking-wider">
+                $<span id="totalAssets">0</span>
+            </div>
+            <!-- 顯示目前的分配比例 -->
+            <div class="mt-3 text-xs text-gray-400 flex justify-center gap-3 bg-gray-800 py-1 px-3 rounded-full mx-auto w-fit">
+                <span>🏠生活 <span id="allocLiving" class="text-blue-300 font-bold">0%</span></span>
+                <span>💰儲蓄 <span id="allocSavings" class="text-green-300 font-bold">0%</span></span>
+                <span>📈投資 <span id="allocInvest" class="text-yellow-300 font-bold">0%</span></span>
+                <span>🎮娛樂 <span id="allocEnt" class="text-purple-300 font-bold">0%</span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. 主要內容區 (可切換分頁) -->
+    <main class="flex-1 overflow-hidden relative bg-gray-50">
+        
+        <!-- === 分頁 1: 記帳 (Home) === -->
+        <div id="view-home" class="tab-content active h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-5">
+            
+            <!-- 帳戶概覽 -->
+            <div>
+                <div class="flex justify-between items-end mb-2 px-1">
+                    <h2 class="text-sm font-bold text-gray-500 uppercase">我的帳戶</h2>
+                    <button onclick="openAccountModal()" class="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm active:scale-95 transition">+ 新增/管理</button>
+                </div>
+                <div class="flex overflow-x-auto space-x-3 pb-2 no-scrollbar" id="accountListContainer"></div>
+            </div>
+
+            <!-- 手機載具顯示卡 (真實條碼) -->
+            <div id="barcodeCard" class="hidden bg-white p-4 rounded-2xl shadow-sm border border-gray-200 relative group">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold text-gray-500">📱 手機載具 (已連結)</span>
+                    <span class="text-[10px] text-green-600 font-bold flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> 連線正常
+                    </span>
+                </div>
+                <div class="bg-white p-2 rounded-xl border border-gray-100 text-center cursor-pointer hover:bg-gray-50 transition overflow-hidden" onclick="alert('請將螢幕亮度調至最亮以利掃描！')">
+                    <!-- 這裡會生成真實的 SVG 條碼 -->
+                    <svg id="carrierBarcode" class="w-full h-16"></svg>
+                    <p class="text-lg font-mono font-bold tracking-widest text-gray-800 mt-1" id="barcodeText">/ABC1234</p>
+                </div>
+            </div>
+
+            <!-- 輸入卡片 -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <!-- 收支切換 -->
+                <div class="flex bg-gray-100 p-1 rounded-xl mb-4 relative">
+                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300" id="btnExpense" onclick="setTransactionType('expense')">支出</div>
+                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300" id="btnIncome" onclick="setTransactionType('income')">收入</div>
+                    <div class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 left-1" id="toggleBg"></div>
+                </div>
+
+                <!-- 帳戶與掃描 -->
+                <div class="flex gap-2 mb-2">
+                    <div class="flex-1">
+                        <select id="accountSelect" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm font-bold py-2 px-3 rounded-xl outline-none"></select>
+                    </div>
+                    <!-- 同步按鈕 (新功能) -->
+                    <button onclick="syncInvoices()" id="btnSync" class="bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 rounded-xl flex items-center justify-center gap-1 shadow-sm hover:bg-indigo-100 active:scale-95 transition">
+                        <span class="text-lg">☁️</span> 
+                    </button>
+                    <!-- 掃描按鈕 (真實功能) -->
+                    <button onclick="startRealScan()" class="bg-gray-900 text-white px-3 rounded-xl flex items-center justify-center gap-1 shadow hover:bg-black active:scale-95 transition">
+                        <span>📷</span> <span class="text-xs font-bold">掃發票</span>
+                    </button>
+                </div>
+
+                <!-- 金額 -->
+                <div class="mb-4 relative">
+                    <span class="absolute left-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">$</span>
+                    <input type="number" id="amountInput" placeholder="0" class="w-full text-3xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-gray-900 outline-none py-2 pl-6 bg-transparent transition-colors">
+                </div>
+
+                <!-- 備註與載具勾選 -->
+                <div class="mb-4 space-y-2">
+                     <input type="text" id="noteInput" placeholder="備註 (可選填)" class="w-full text-sm text-gray-600 border-b border-gray-100 focus:border-gray-400 outline-none py-2 bg-transparent">
+                     
+                     <!-- 載具選項 (如果有設定) -->
+                     <div id="carrierOption" class="hidden flex items-center gap-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg transition-all hover:bg-gray-100" onclick="document.getElementById('useCarrier').click()">
+                        <input type="checkbox" id="useCarrier" class="w-4 h-4 accent-gray-900 rounded cursor-pointer pointer-events-none">
+                        <label class="cursor-pointer select-none flex-1 pointer-events-none">存入手機載具 <span id="carrierCodeDisplay" class="text-gray-400 font-mono font-bold"></span></label>
+                     </div>
+                </div>
+
+                <!-- 分類 -->
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-gray-400 uppercase">選擇分類</label>
+                    <button onclick="openCategoryManager()" class="text-xs text-gray-500 hover:text-black bg-gray-100 px-2 py-0.5 rounded">管理分類 ⚙️</button>
+                </div>
+                <div class="grid grid-cols-5 gap-2 mb-4" id="categoryGrid"></div>
+                <!-- 按鈕 -->
+                <button onclick="addTransaction()" id="addBtn" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">＋ 新增支出</button>
+            </div>
+
+            <!-- 列表 -->
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 mb-2 px-1">最近紀錄</h2>
+                <div id="transactionList" class="space-y-3 pb-20"></div>
+            </div>
+        </div>
+
+        <!-- === 分頁 2: 報表 (Stats) === -->
+        <div id="view-stats" class="tab-content h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-6">
+            <!-- 時間篩選 -->
+            <div class="flex gap-2 bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
+                <button onclick="changeStatPeriod('week')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn bg-gray-900 text-white" id="btn-week">本週</button>
+                <button onclick="changeStatPeriod('month')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn text-gray-500 hover:bg-gray-100" id="btn-month">本月</button>
+                <button onclick="changeStatPeriod('year')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn text-gray-500 hover:bg-gray-100" id="btn-year">今年</button>
+            </div>
+            
+            <!-- 收支切換 -->
+            <div class="flex justify-center gap-6 border-b border-gray-200 pb-2">
+                 <button onclick="toggleChartType('expense')" id="chartTypeExp" class="text-sm font-bold border-b-2 border-gray-900 pb-1 px-2 transition-all">支出分析</button>
+                 <button onclick="toggleChartType('income')" id="chartTypeInc" class="text-sm font-bold text-gray-400 pb-1 border-b-2 border-transparent px-2 hover:text-gray-600 transition-all">收入分析</button>
+            </div>
+
+            <!-- 圓餅圖 -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center relative">
+                <div class="w-3/4 mx-auto">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div id="categoryLegend" class="mt-4 space-y-2 text-left"></div>
+                <div id="noChartData" class="hidden absolute inset-0 flex items-center justify-center bg-white/80 text-gray-400 text-sm">無資料</div>
+            </div>
+            
+            <!-- 屬性分析 (生活/娛樂/儲蓄/投資) -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <span>資金流向分析</span>
+                    <span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded">依分類屬性</span>
+                </h3>
+                <div id="bucketAnalysis" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- === 分頁 3: 目標 (Goals) === -->
+        <div id="view-goals" class="tab-content h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-4">
+            <div class="flex justify-between items-center px-1">
+                <h2 class="text-lg font-bold text-gray-800">我的願望清單</h2>
+                <button onclick="openGoalModal()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded-full font-bold shadow hover:bg-indigo-700 active:scale-95 transition">+ 新增目標</button>
+            </div>
+            
+            <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-lg text-xs text-indigo-700 leading-relaxed mb-2">
+                💡 <b>說明：</b> 系統會計算該帳戶的「娛樂基金」額度。一旦達成目標，就會<b>鎖定</b>為已完成，不會因為之後花錢而改變。
+            </div>
+
+            <div id="goalsContainer" class="space-y-4 pb-20"></div>
+        </div>
+    </main>
+
+    <!-- 3. 底部導航列 -->
+    <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full max-w-md pb-safe z-30 flex justify-around items-center h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <button onclick="switchTab('view-home')" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-900 active:bg-gray-50" data-target="view-home">
+            <span class="text-xl mb-0.5">📝</span><span class="text-[10px] font-bold">記帳</span>
+        </button>
+        <button onclick="switchTab('view-stats')" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 active:bg-gray-50" data-target="view-stats">
+            <span class="text-xl mb-0.5">📊</span><span class="text-[10px] font-bold">報表</span>
+        </button>
+        <button onclick="switchTab('view-goals')" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 active:bg-gray-50" data-target="view-goals">
+            <span class="text-xl mb-0.5">🎯</span><span class="text-[10px] font-bold">目標</span>
+        </button>
+    </nav>
+
+    <!-- === Modals 彈窗區域 === -->
+
+    <!-- 真實掃描 Modal -->
+    <div id="scanModal" class="modal hidden fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="w-full max-w-sm flex flex-col items-center relative">
+            <h3 class="text-white text-lg font-bold mb-4">掃描發票 QR Code</h3>
+            
+            <!-- 掃描器容器 -->
+            <div id="reader" class="w-full aspect-square bg-black rounded-2xl overflow-hidden border-2 border-white/20"></div>
+            
+            <div class="mt-6 text-center">
+                <p class="text-white/70 text-sm mb-4">請將鏡頭對準電子發票左側的 QR Code</p>
+                <button onclick="stopScan()" class="bg-white/20 text-white border border-white/30 px-8 py-3 rounded-full font-bold hover:bg-white/30 transition">取消掃描</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 同步中 Modal -->
+    <div id="syncModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl">
+            <div class="text-4xl mb-4 animate-spin-slow">☁️</div>
+            <h2 class="text-lg font-bold text-gray-900 mb-1">正在同步發票...</h2>
+            <p class="text-gray-500 mb-0 text-sm">連線至財政部電子發票平台</p>
+        </div>
+    </div>
+
+    <!-- 提醒通知 Modal -->
+    <div id="reminderModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl">
+            <div class="text-5xl mb-4">🔔</div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">記帳提醒</h2>
+            <p class="text-gray-500 mb-6 text-sm">今天還沒有記帳喔！花一分鐘記錄一下今天的開銷吧？</p>
+            <button onclick="document.getElementById('reminderModal').classList.add('hidden')" class="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:scale-105 transition shadow-lg">好的，馬上記！</button>
+        </div>
+    </div>
+
+    <!-- 新手導引 Modal -->
+    <div id="onboardingModal" class="modal hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl">
+            <div class="text-5xl mb-4">👋</div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">歡迎使用！</h2>
+            <p class="text-gray-500 mb-6 text-sm leading-relaxed text-left bg-gray-50 p-4 rounded-xl">
+                1. <b>設定比例</b>：點擊右上角 ⚙️ 設定生活、儲蓄等佔比。<br>
+                2. <b>設定載具</b>：輸入手機條碼，支援雲端發票匯入。<br>
+                3. <b>設定目標</b>：系統會自動計算您的「娛樂基金」夠不夠買心願清單！
+            </p>
+            <button onclick="closeOnboarding()" class="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:scale-105 transition shadow-lg">開始規劃 🚀</button>
+        </div>
+    </div>
+
+    <!-- 設定 (含提醒與載具) Modal -->
+    <div id="settingsModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl h-3/4 flex flex-col">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex-shrink-0">偏好設定</h3>
+            
+            <div class="overflow-y-auto flex-1 custom-scrollbar space-y-6 pr-1">
+                <!-- 1. 資產分配 -->
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <p class="text-xs font-bold text-gray-500 mb-3">資產分配比例 (總和 100%)</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-bold text-blue-600">🏠 生活</label>
+                            <input type="number" id="setLiving" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-blue-500 transition" value="50">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-bold text-green-600">💰 儲蓄</label>
+                            <input type="number" id="setSavings" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-green-500 transition" value="20">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-bold text-yellow-600">📈 投資</label>
+                            <input type="number" id="setInvest" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-yellow-500 transition" value="10">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-bold text-purple-600">🎮 娛樂</label>
+                            <input type="number" id="setEnt" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-purple-500 transition" value="20">
+                        </div>
+                    </div>
+                    <div class="text-right text-xs font-bold mt-2" id="totalRatioDisplay">總計: 100%</div>
+                </div>
+
+                <!-- 2. 載具設定 (更新 UI) -->
+                <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                    <p class="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1">
+                        📱 發票載具連結
+                    </p>
+                    <div class="bg-white p-2 rounded-lg border border-indigo-100 mb-2">
+                        <input type="text" id="setCarrier" placeholder="輸入手機條碼 (例如: /ABC1234)" class="w-full text-sm outline-none uppercase font-mono text-center font-bold text-gray-700">
+                    </div>
+                    <button onclick="alert('模擬：已成功連線至財政部電子發票整合服務平台！'); saveSettings();" class="w-full bg-indigo-600 text-white text-xs py-2 rounded-lg font-bold hover:bg-indigo-700 transition">連結帳戶</button>
+                    <p class="text-[10px] text-indigo-400 mt-2 text-center">連結後可使用「同步發票」功能</p>
+                </div>
+
+                <!-- 3. 提醒設定 -->
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-xs font-bold text-gray-500">🔔 每日記帳提醒</p>
+                        <input type="checkbox" id="setReminderToggle" class="accent-gray-900 w-4 h-4 cursor-pointer" onchange="toggleReminderInput()">
+                    </div>
+                    <div id="reminderTimeBlock" class="hidden">
+                        <input type="time" id="setReminderTime" class="w-full bg-white border rounded p-2 text-sm outline-none">
+                        <p class="text-[10px] text-gray-400 mt-1">若當日未記帳，下次開啟 APP 時會提醒。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mt-4 flex-shrink-0">
+                <button onclick="closeSettings()" class="py-2 text-gray-500 font-bold rounded-lg hover:bg-gray-100">取消</button>
+                <button onclick="saveSettings()" class="py-2 bg-gray-900 text-white rounded-lg font-bold shadow hover:bg-black">儲存設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帳戶管理 Modal -->
+    <div id="accountModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4" id="accModalTitle">新增帳戶</h3>
+            <input type="hidden" id="accId">
+            <label class="text-xs text-gray-500 mb-1 block">帳戶名稱</label>
+            <input type="text" id="accName" placeholder="例如: 薪轉戶" class="w-full bg-gray-50 border mb-3 rounded-lg p-2 outline-none focus:ring-2 focus:ring-gray-200">
+            <label class="text-xs text-gray-500 mb-1 block">初始餘額</label>
+            <input type="number" id="accBalance" placeholder="0" class="w-full bg-gray-50 border mb-6 rounded-lg p-2 outline-none focus:ring-2 focus:ring-gray-200">
+            
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('accountModal').classList.add('hidden')" class="flex-1 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg">取消</button>
+                <button onclick="saveAccount()" class="flex-1 py-2 bg-gray-900 text-white rounded-lg font-bold shadow hover:bg-black">儲存</button>
+            </div>
+            <button onclick="deleteAccountCurrent()" id="btnDelAcc" class="w-full mt-4 text-red-500 text-xs py-2 font-bold hover:bg-red-50 rounded hidden">刪除此帳戶</button>
+        </div>
+    </div>
+
+    <!-- 分類管理 Modal -->
+    <div id="categoryModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-6 h-4/5 flex flex-col">
+            <h3 class="text-lg font-bold mb-4 flex-shrink-0">管理分類</h3>
+            
+            <!-- 新增區 -->
+            <div class="bg-gray-50 p-3 rounded-lg mb-4 flex-shrink-0 border border-gray-200">
+                <p class="text-xs font-bold text-gray-500 mb-2">新增分類</p>
+                <div class="grid grid-cols-5 gap-2 mb-2 h-24 overflow-y-auto border p-1 bg-white rounded custom-scrollbar" id="iconPicker">
+                    <!-- Icons generated by JS -->
+                </div>
+                <input type="text" id="newCatName" placeholder="名稱 (例: 咖啡)" class="w-full border rounded p-1.5 text-sm mb-2 outline-none focus:border-gray-400">
+                <select id="newCatBucket" class="w-full border rounded p-1.5 text-sm mb-2 outline-none focus:border-gray-400 bg-white">
+                    <option value="living">🏠 生活 (Living)</option>
+                    <option value="entertainment">🎮 娛樂 (Fun)</option>
+                    <option value="savings">💰 儲蓄 (Saving)</option>
+                    <option value="investment">📈 投資 (Invest)</option>
+                </select>
+                <button onclick="addNewCategory()" class="w-full bg-gray-900 text-white text-xs py-2 rounded font-bold shadow hover:bg-black">＋ 新增</button>
+            </div>
+
+            <!-- 列表區 -->
+            <p class="text-xs font-bold text-gray-500 mb-2 flex-shrink-0">現有分類 (點擊刪除)</p>
+            <div id="categoryListEdit" class="space-y-2 overflow-y-auto flex-1 custom-scrollbar pr-1"></div>
+
+            <button onclick="document.getElementById('categoryModal').classList.add('hidden')" class="w-full mt-4 py-3 border rounded-xl text-gray-600 font-bold hover:bg-gray-100 flex-shrink-0">完成</button>
+        </div>
+    </div>
+
+    <!-- 目標 Modal -->
+    <div id="goalModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4">設定新目標</h3>
+            <label class="text-xs text-gray-500 mb-1 block">目標名稱</label>
+            <input type="text" id="goalName" placeholder="例: 買新手機" class="w-full bg-gray-50 border mb-3 rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-100">
+            <label class="text-xs text-gray-500 mb-1 block">目標金額</label>
+            <input type="number" id="goalAmount" placeholder="例: 20000" class="w-full bg-gray-50 border mb-3 rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-100">
+            
+            <div class="mb-6">
+                <label class="text-xs text-gray-500 block mb-1">使用哪個帳戶的「娛樂基金」？</label>
+                <select id="goalAccountSelect" class="w-full bg-gray-50 border rounded-lg p-2 outline-none text-sm focus:ring-2 focus:ring-indigo-100"></select>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('goalModal').classList.add('hidden')" class="flex-1 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg">取消</button>
+                <button onclick="saveGoal()" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold shadow hover:bg-indigo-700">確認儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 核心資料結構 ---
+        let appData = {
+            transactions: [],
+            accounts: [{ id: 'acc_1', name: '現金錢包', initialBalance: 0 }],
+            categories: [
+                { id: 'c1', name: '早餐', icon: '🥪', bucket: 'living', type: 'expense' },
+                { id: 'c2', name: '午晚餐', icon: '🍱', bucket: 'living', type: 'expense' },
+                { id: 'c3', name: '交通', icon: '🚌', bucket: 'living', type: 'expense' },
+                { id: 'c4', name: '飲料', icon: '🥤', bucket: 'entertainment', type: 'expense' },
+                { id: 'c5', name: '遊戲', icon: '🎮', bucket: 'entertainment', type: 'expense' },
+                { id: 'c6', name: '薪水', icon: '💰', bucket: 'living', type: 'income' },
+                { id: 'c7', name: '股票', icon: '📈', bucket: 'investment', type: 'expense' },
+                { id: 'c8', name: '房租', icon: '🏠', bucket: 'living', type: 'expense' }
+            ],
+            // Goals: { id, name, target, accountId, completed: false, celebrated: false, priority: 0 }
+            goals: [], 
+            allocation: { living: 50, savings: 20, investment: 10, entertainment: 20 },
+            // New Settings Structure
+            settings: { 
+                reminderEnabled: false, 
+                reminderTime: '20:00',
+                carrierCode: '' 
+            },
+            lastLoginDate: '',
+            isFirstTime: true
+        };
+
+        const availableIcons = ['🍔','🍱','🍜','🍣','🍎','🍺','☕','🚗','🚕','✈️','🏠','💡','📱','💊','🛍️','🎁','🎮','🎬','🐶','📚','💰','💵','🏥','🏋️','🏝️','🎤','👗','💄','🚲','⛽'];
+
+        let myChart = null;
+        let statPeriod = 'week';
+        let chartType = 'expense';
+        let selectedIcon = availableIcons[0];
+        let currentTransType = 'expense';
+        let selectedCatId = null;
+        
+        // 掃描器變數
+        let html5QrcodeScanner = null;
+
+        // --- 初始化 ---
+        window.onload = () => {
+            loadData();
+            if(appData.isFirstTime) {
+                document.getElementById('onboardingModal').classList.remove('hidden');
+            }
+            // Check Reminder
+            checkReminder();
+            // Update last login
+            appData.lastLoginDate = new Date().toDateString();
+            saveData();
+            
+            refreshUI();
+            checkGoals(false); 
+        };
+
+        function loadData() {
+            const saved = localStorage.getItem('v9_app_data'); // Updated Key for V9
+            if(saved) {
+                const parsed = JSON.parse(saved);
+                appData = { ...appData, ...parsed };
+                if(!appData.settings) appData.settings = { reminderEnabled: false, reminderTime: '20:00', carrierCode: '' };
+                appData.categories.forEach(c => { if(!c.bucket) c.bucket = 'living'; });
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('v9_app_data', JSON.stringify(appData));
+        }
+
+        function checkReminder() {
+            const today = new Date().toDateString();
+            if(appData.settings && appData.settings.reminderEnabled) {
+                const now = new Date();
+                const [h, m] = appData.settings.reminderTime.split(':');
+                const reminderTime = new Date();
+                reminderTime.setHours(h, m, 0, 0);
+
+                const hasTransToday = appData.transactions.some(t => new Date(t.date).toDateString() === today);
+                const sessionReminded = sessionStorage.getItem('reminded_today');
+                
+                if(!hasTransToday && now > reminderTime && !sessionReminded) {
+                     document.getElementById('reminderModal').classList.remove('hidden');
+                     sessionStorage.setItem('reminded_today', 'true');
+                }
+            }
+        }
+
+        function refreshUI() {
+            renderHeader();
+            renderAccounts();
+            renderCategoryGrid();
+            renderTransactions();
+            renderGoalList();
+            updateAccountSelects();
+            
+            // Settings inputs sync
+            document.getElementById('setLiving').value = appData.allocation.living;
+            document.getElementById('setSavings').value = appData.allocation.savings;
+            document.getElementById('setInvest').value = appData.allocation.investment;
+            document.getElementById('setEnt').value = appData.allocation.entertainment;
+            
+            // New Settings sync
+            document.getElementById('setCarrier').value = appData.settings.carrierCode || '';
+            document.getElementById('setReminderToggle').checked = appData.settings.reminderEnabled;
+            document.getElementById('setReminderTime').value = appData.settings.reminderTime;
+            toggleReminderInput();
+
+            // Carrier UI in Home (Real Barcode Generation)
+            const carrierCode = appData.settings.carrierCode;
+            if(carrierCode) {
+                document.getElementById('carrierOption').classList.remove('hidden');
+                document.getElementById('carrierCodeDisplay').innerText = carrierCode;
+                document.getElementById('barcodeCard').classList.remove('hidden');
+                document.getElementById('barcodeText').innerText = carrierCode;
+                
+                // Use JsBarcode to generate real barcode
+                try {
+                    JsBarcode("#carrierBarcode", carrierCode, {
+                        format: "CODE39",
+                        width: 2,
+                        height: 50,
+                        displayValue: false,
+                        margin: 0,
+                        background: "#ffffff",
+                        lineColor: "#000000"
+                    });
+                } catch(e) {
+                    console.error("Barcode generation failed:", e);
+                }
+            } else {
+                document.getElementById('carrierOption').classList.add('hidden');
+                document.getElementById('barcodeCard').classList.add('hidden');
+            }
+
+            updateRatioTotal();
+
+            if(document.getElementById('view-stats').style.display === 'block') updateCharts();
+        }
+
+        // --- 雲端發票同步功能 (Mock) ---
+        function syncInvoices() {
+            // 檢查是否已設定載具
+            if(!appData.settings.carrierCode) {
+                if(confirm("尚未設定手機載具條碼。是否現在前往設定？")) {
+                    openSettings();
+                }
+                return;
+            }
+
+            // 顯示同步動畫
+            document.getElementById('syncModal').classList.remove('hidden');
+
+            // 模擬 API 延遲
+            setTimeout(() => {
+                document.getElementById('syncModal').classList.add('hidden');
+                
+                // 產生 1~3 筆隨機發票資料
+                const newCount = Math.floor(Math.random() * 3) + 1;
+                let totalSynced = 0;
+                
+                for(let i=0; i<newCount; i++) {
+                    const stores = ['統一超商', '全家便利商店', '全聯實業', '台灣中油', 'Uber Eats'];
+                    const randomStore = stores[Math.floor(Math.random() * stores.length)];
+                    const randomAmt = Math.floor(Math.random() * 300) + 20; // 20~320
+                    
+                    // 隨機分類邏輯
+                    let catId = 'c1'; // Default food
+                    if(randomStore.includes('中油')) catId = 'c3'; // Transport
+                    
+                    appData.transactions.unshift({
+                        id: Date.now() + i,
+                        amount: randomAmt,
+                        type: 'expense',
+                        categoryId: catId,
+                        accountId: appData.accounts[0].id, // Default to first account
+                        note: `雲端發票: ${randomStore}`,
+                        date: new Date().toISOString()
+                    });
+                    totalSynced += randomAmt;
+                }
+                
+                saveData();
+                refreshUI();
+                checkGoals(true);
+                
+                alert(`✅ 同步完成！\n\n成功匯入 ${newCount} 筆雲端發票\n共計 $${totalSynced} 元`);
+                
+            }, 2500); // 2.5秒模擬時間
+        }
+
+        // --- 1. 新手導引 & 設定 ---
+        function closeOnboarding() {
+            appData.isFirstTime = false;
+            saveData();
+            document.getElementById('onboardingModal').classList.add('hidden');
+            openSettings(); 
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+            updateRatioTotal();
+        }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+        
+        function toggleReminderInput() {
+            const enabled = document.getElementById('setReminderToggle').checked;
+            const block = document.getElementById('reminderTimeBlock');
+            if(enabled) block.classList.remove('hidden');
+            else block.classList.add('hidden');
+        }
+
+        function updateRatioTotal() {
+            const sum = parseInt(document.getElementById('setLiving').value||0) + 
+                        parseInt(document.getElementById('setSavings').value||0) + 
+                        parseInt(document.getElementById('setInvest').value||0) + 
+                        parseInt(document.getElementById('setEnt').value||0);
+            const disp = document.getElementById('totalRatioDisplay');
+            disp.innerText = `目前總計: ${sum}%`;
+            disp.className = sum === 100 ? 'text-right text-xs font-bold mt-2 text-green-600' : 'text-right text-xs font-bold mt-2 text-red-500';
+        }
+
+        ['setLiving','setSavings','setInvest','setEnt'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateRatioTotal);
+        });
+
+        function saveSettings() {
+            const l = parseInt(document.getElementById('setLiving').value);
+            const s = parseInt(document.getElementById('setSavings').value);
+            const i = parseInt(document.getElementById('setInvest').value);
+            const e = parseInt(document.getElementById('setEnt').value);
+            
+            if(l+s+i+e !== 100) { alert('請調整比例，總和必須剛好是 100% 喔！'); return; }
+            
+            appData.allocation = { living: l, savings: s, investment: i, entertainment: e };
+            appData.settings.carrierCode = document.getElementById('setCarrier').value.trim().toUpperCase();
+            appData.settings.reminderEnabled = document.getElementById('setReminderToggle').checked;
+            appData.settings.reminderTime = document.getElementById('setReminderTime').value;
+
+            saveData();
+            closeSettings();
+            refreshUI();
+            checkGoals(true); 
+        }
+
+        // --- 真實掃描功能 (解析發票) ---
+        async function startRealScan() {
+            document.getElementById('scanModal').classList.remove('hidden');
+            
+            // 確保先清除舊的實例，避免重複開啟導致錯誤
+            if(html5QrcodeScanner) {
+                try {
+                    await html5QrcodeScanner.clear();
+                } catch(e) {
+                    console.log("Cleanup error", e);
+                }
+                html5QrcodeScanner = null;
+            }
+
+            // 初始化掃描器
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", 
+                { 
+                    fps: 15, // 提高 FPS 讓掃描更流暢
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                    formatsToSupport: [ 
+                        Html5QrcodeSupportedFormats.QR_CODE,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.EAN_13 
+                    ],
+                    // 關閉一些可能導致問題的實驗性功能，或者保留如果是必要的
+                    experimentalFeatures: {
+                        useBarCodeDetectorIfSupported: true
+                    },
+                    rememberLastUsedCamera: true
+                },
+                /* verbose= */ false
+            );
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            playScanSound(); // 播放音效
+            stopScan();
+            console.log("Scan Result:", decodedText);
+            
+            let noteText = "";
+            let parsedAmount = 0;
+            let parsedDateStr = "";
+
+            // 1. 判斷是否為手機載具 (Code 39 格式，通常是 / 開頭 8 碼)
+            // 有些掃描器可能不會讀到 /，所以我們檢查是否符合載具格式
+            if (decodedText.startsWith('/') || (decodedText.length === 7 && /^[A-Z0-9]+$/.test(decodedText))) {
+                 // 如果掃到的是載具
+                 const carrierCode = decodedText.startsWith('/') ? decodedText : '/' + decodedText;
+                 
+                 noteText = `載具: ${carrierCode}`;
+                 alert(`✅ 載具掃描成功！\n號碼: ${carrierCode}`);
+                 
+                 // 如果還沒設定載具，自動存入設定
+                 if(!appData.settings.carrierCode) {
+                     appData.settings.carrierCode = carrierCode;
+                     saveData();
+                 }
+                 // 自動勾選「存入手機載具」
+                 document.getElementById('useCarrier').checked = true;
+            } 
+            // 2. 判斷是否為電子發票 (QR Code 格式: 77碼)
+            else if(decodedText.length === 77) {
+                 // 嘗試解析
+                 const invNum = decodedText.substring(0, 10); // 發票號碼
+                 const invDateROC = decodedText.substring(10, 17); // 日期 (1120101)
+                 // 金額通常在第 22-29 碼 (8位 16進制 SalesAmount) 或 30-37 (TotalAmount)
+                 const amountHex = decodedText.substring(29, 37); 
+                 
+                 // 轉換日期
+                 const year = parseInt(invDateROC.substring(0, 3)) + 1911;
+                 const month = invDateROC.substring(3, 5);
+                 const day = invDateROC.substring(5, 7);
+                 parsedDateStr = `${year}/${month}/${day}`;
+
+                 // 轉換金額 (16進位轉10進位)
+                 parsedAmount = parseInt(amountHex, 16);
+                 
+                 noteText = `發票: ${invNum}`;
+                 alert(`✅ 發票掃描成功！\n號碼: ${invNum}\n日期: ${parsedDateStr}\n金額: $${parsedAmount}`);
+            } else {
+                 // 一般 QR Code (如果不是標準發票)
+                 noteText = "掃描: " + decodedText;
+                 alert(`掃描成功！內容: ${decodedText}`);
+            }
+
+            // 填入欄位
+            if(noteText) document.getElementById('noteInput').value = noteText;
+            if(parsedAmount > 0) document.getElementById('amountInput').value = parsedAmount;
+        }
+
+        function onScanFailure(error) {
+            // console.warn(`Code scan error = ${error}`);
+        }
+
+        async function stopScan() {
+            document.getElementById('scanModal').classList.add('hidden');
+            if(html5QrcodeScanner) {
+                try {
+                    await html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                } catch(error) {
+                    console.error("Failed to clear html5QrcodeScanner. ", error);
+                }
+            }
+        }
+
+        function playScanSound() {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.type = "sine";
+            osc.frequency.value = 1500;
+            gain.gain.value = 0.1;
+            osc.connect(gain);
+            gain.connect(context.destination);
+            osc.start();
+            setTimeout(() => osc.stop(), 100);
+        }
+
+        // --- 2. 帳戶管理 ---
+        function getAccountBalance(accId) {
+            const acc = appData.accounts.find(a => a.id === accId);
+            if(!acc) return 0;
+            const relatedTrans = appData.transactions.filter(t => t.accountId === accId);
+            const income = relatedTrans.filter(t => t.type === 'income').reduce((sum,t)=>sum+t.amount,0);
+            const expense = relatedTrans.filter(t => t.type === 'expense').reduce((sum,t)=>sum+t.amount,0);
+            return acc.initialBalance + income - expense;
+        }
+
+        function getTotalAssets() {
+            return appData.accounts.reduce((sum, acc) => sum + getAccountBalance(acc.id), 0);
+        }
+
+        function renderHeader() {
+            document.getElementById('totalAssets').innerText = getTotalAssets().toLocaleString();
+            document.getElementById('allocLiving').innerText = appData.allocation.living + '%';
+            document.getElementById('allocSavings').innerText = appData.allocation.savings + '%';
+            document.getElementById('allocInvest').innerText = appData.allocation.investment + '%';
+            document.getElementById('allocEnt').innerText = appData.allocation.entertainment + '%';
+        }
+
+        function renderAccounts() {
+            const container = document.getElementById('accountListContainer');
+            container.innerHTML = appData.accounts.map(acc => `
+                <div onclick="editAccount('${acc.id}')" class="flex-shrink-0 bg-white border border-gray-200 rounded-xl p-3 w-32 shadow-sm flex flex-col justify-between cursor-pointer hover:border-gray-400 hover:shadow-md transition">
+                    <span class="text-xs text-gray-500 font-bold truncate">${acc.name}</span>
+                    <span class="text-lg font-bold text-gray-900 truncate">$${getAccountBalance(acc.id).toLocaleString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateAccountSelects() {
+            const opts = appData.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+            document.getElementById('accountSelect').innerHTML = opts;
+            document.getElementById('goalAccountSelect').innerHTML = opts;
+        }
+
+        function openAccountModal(accId = null) {
+            const modal = document.getElementById('accountModal');
+            const title = document.getElementById('accModalTitle');
+            const idInput = document.getElementById('accId');
+            const nameInput = document.getElementById('accName');
+            const balInput = document.getElementById('accBalance');
+            const delBtn = document.getElementById('btnDelAcc');
+
+            modal.classList.remove('hidden');
+            
+            if(accId) {
+                const acc = appData.accounts.find(a => a.id === accId);
+                title.innerText = "編輯帳戶";
+                idInput.value = acc.id;
+                nameInput.value = acc.name;
+                balInput.value = acc.initialBalance;
+                delBtn.classList.remove('hidden');
+            } else {
+                title.innerText = "新增帳戶";
+                idInput.value = '';
+                nameInput.value = '';
+                balInput.value = '';
+                delBtn.classList.add('hidden');
+            }
+        }
+
+        function editAccount(id) { openAccountModal(id); }
+
+        function saveAccount() {
+            const id = document.getElementById('accId').value;
+            const name = document.getElementById('accName').value;
+            const bal = parseInt(document.getElementById('accBalance').value);
+            
+            if(!name) { alert('請輸入名稱'); return; }
+
+            if(id) {
+                const idx = appData.accounts.findIndex(a => a.id === id);
+                appData.accounts[idx].name = name;
+                appData.accounts[idx].initialBalance = bal || 0;
+            } else {
+                appData.accounts.push({ id: 'acc_'+Date.now(), name, initialBalance: bal || 0 });
+            }
+            saveAccountAndClose();
+        }
+        
+        function saveAccountAndClose() {
+             saveData();
+             document.getElementById('accountModal').classList.add('hidden');
+             refreshUI();
+             checkGoals(true);
+        }
+
+        function deleteAccountCurrent() {
+            const id = document.getElementById('accId').value;
+            if(appData.accounts.length <= 1) { alert('至少要保留一個帳戶喔！'); return; }
+            if(confirm('確定要刪除此帳戶嗎？\n⚠️ 警告：該帳戶的所有記帳紀錄也將失去關聯顯示！')) {
+                appData.accounts = appData.accounts.filter(a => a.id !== id);
+                saveAccountAndClose();
+            }
+        }
+
+        // --- 3. 分類管理 ---
+        function openCategoryManager() {
+            document.getElementById('categoryModal').classList.remove('hidden');
+            renderIconPicker();
+            renderCategoryListEdit();
+        }
+
+        function renderIconPicker() {
+            document.getElementById('iconPicker').innerHTML = availableIcons.map(icon => `
+                <div onclick="selectedIcon='${icon}'; renderIconPicker()" class="text-center text-xl cursor-pointer p-1 rounded transition ${selectedIcon===icon ? 'bg-gray-800 text-white scale-110' : 'hover:bg-gray-100'}">${icon}</div>
+            `).join('');
+        }
+
+        function addNewCategory() {
+            const name = document.getElementById('newCatName').value;
+            const bucket = document.getElementById('newCatBucket').value;
+            if(!name) { alert('請輸入分類名稱'); return; }
+            
+            appData.categories.push({
+                id: 'cat_'+Date.now(),
+                name,
+                icon: selectedIcon,
+                bucket,
+                type: 'expense' 
+            });
+            saveData();
+            renderCategoryListEdit();
+            renderCategoryGrid();
+            document.getElementById('newCatName').value = '';
+        }
+
+        function renderCategoryListEdit() {
+            document.getElementById('categoryListEdit').innerHTML = appData.categories.map(c => `
+                <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">${c.icon}</span>
+                        <span class="text-sm font-bold text-gray-700">${c.name}</span>
+                        <span class="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-medium">${c.bucket}</span>
+                    </div>
+                    <button onclick="deleteCategory('${c.id}')" class="text-gray-300 hover:text-red-500 font-bold px-2 transition">×</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteCategory(id) {
+            if(confirm('確定要刪除此分類嗎？')) {
+                appData.categories = appData.categories.filter(c => c.id !== id);
+                saveData();
+                renderCategoryListEdit();
+                renderCategoryGrid();
+            }
+        }
+
+        function setTransactionType(type) {
+            currentTransType = type;
+            const bg = document.getElementById('toggleBg');
+            const btnE = document.getElementById('btnExpense');
+            const btnI = document.getElementById('btnIncome');
+            const addBtn = document.getElementById('addBtn');
+            const amtIn = document.getElementById('amountInput');
+
+            if(type === 'expense') {
+                bg.style.left = '4px';
+                btnE.classList.remove('text-gray-500');
+                btnI.classList.add('text-gray-500');
+                addBtn.innerText = '＋ 新增支出';
+                addBtn.className = "w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all";
+                amtIn.classList.remove('text-green-600');
+            } else {
+                bg.style.left = '50%';
+                btnI.classList.remove('text-gray-500');
+                btnE.classList.add('text-gray-500');
+                addBtn.innerText = '＋ 新增收入';
+                addBtn.className = "w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all";
+                amtIn.classList.add('text-green-600');
+            }
+            renderCategoryGrid();
+        }
+
+        function renderCategoryGrid() {
+            const displayCats = appData.categories;
+            if(!selectedCatId && displayCats.length > 0) selectedCatId = displayCats[0].id;
+
+            document.getElementById('categoryGrid').innerHTML = displayCats.map(c => `
+                <button onclick="selectedCatId='${c.id}'; renderCategoryGrid()" 
+                    class="flex flex-col items-center justify-center p-2 rounded-xl transition-all border ${selectedCatId === c.id ? 'bg-gray-800 text-white border-gray-800 shadow-md scale-105' : 'bg-white text-gray-500 border-transparent hover:bg-gray-50'}">
+                    <span class="text-xl mb-1">${c.icon}</span>
+                    <span class="text-[10px] font-medium truncate w-full text-center">${c.name}</span>
+                </button>
+            `).join('');
+        }
+
+        // --- 4. 交易功能 ---
+        function addTransaction() {
+            const amount = parseInt(document.getElementById('amountInput').value);
+            const note = document.getElementById('noteInput').value;
+            const accId = document.getElementById('accountSelect').value;
+            const useCarrier = document.getElementById('useCarrier').checked;
+            
+            if(!amount || amount <= 0) { alert('請輸入金額'); return; }
+            if(!selectedCatId) { alert('請選擇分類'); return; }
+
+            // Append carrier note if checked
+            let finalNote = note;
+            if(useCarrier && appData.settings.carrierCode) {
+                finalNote = (note ? note + ' ' : '') + '[載具]';
+            }
+
+            appData.transactions.unshift({
+                id: Date.now(),
+                amount,
+                type: currentTransType,
+                categoryId: selectedCatId,
+                accountId: accId,
+                note: finalNote,
+                date: new Date().toISOString()
+            });
+            
+            saveData();
+            document.getElementById('amountInput').value = '';
+            document.getElementById('noteInput').value = '';
+            document.getElementById('useCarrier').checked = false; // Reset checkbox
+            
+            refreshUI();
+            
+            // Check goals after adding money/expense
+            setTimeout(() => checkGoals(true), 300);
+        }
+
+        function renderTransactions() {
+            const list = document.getElementById('transactionList');
+            if(appData.transactions.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 opacity-50"><p class="text-4xl mb-2">🍃</p><p class="text-sm">尚無紀錄</p></div>`;
+                return;
+            }
+            list.innerHTML = appData.transactions.slice(0, 20).map(t => {
+                const cat = appData.categories.find(c => c.id === t.categoryId) || { icon: '❓', name: '未知' };
+                const acc = appData.accounts.find(a => a.id === t.accountId) || { name: '已刪帳戶' };
+                const isExp = t.type === 'expense';
+                const dateObj = new Date(t.date);
+                const dateStr = `${dateObj.getMonth()+1}/${dateObj.getDate()}`;
+                
+                const isCarrier = t.note && t.note.includes('[載具]');
+                const displayNote = t.note.replace('[載具]', '').trim() || cat.name;
+                const isCloud = t.note && t.note.includes('雲端發票');
+
+                return `
+                <div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-50 relative group">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-lg shrink-0">${cat.icon}</div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1">
+                                <p class="font-bold text-gray-800 text-sm truncate">${displayNote}</p>
+                                ${isCarrier ? '<span class="text-[10px] bg-gray-200 text-gray-500 px-1 rounded">☁️</span>' : ''}
+                                ${isCloud ? '<span class="text-[10px] bg-indigo-100 text-indigo-500 px-1 rounded">☁️雲端</span>' : ''}
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-gray-400">
+                                <span>${dateStr}</span>
+                                <span class="bg-gray-100 px-1 rounded">${acc.name}</span>
+                                <span class="bg-blue-50 text-blue-400 px-1 rounded">${cat.bucket||'living'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="font-bold text-lg ${isExp ? 'text-gray-900' : 'text-green-600'}">${isExp ? '-' : '+'}$${t.amount}</span>
+                        <button onclick="deleteTrans(${t.id})" class="text-gray-300 hover:text-red-500 px-2 font-bold text-xl transition">×</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function deleteTrans(id) {
+            if(confirm('確定要刪除這筆資料嗎？')) {
+                appData.transactions = appData.transactions.filter(t => t.id !== id);
+                saveData();
+                refreshUI();
+                checkGoals(false); // Check, but maybe don't fire fireworks on delete? logic depends. safer to check.
+            }
+        }
+
+        // --- 5. 目標系統 (核心優化) ---
+        function openGoalModal() { document.getElementById('goalModal').classList.remove('hidden'); }
+        
+        function saveGoal() {
+            const name = document.getElementById('goalName').value;
+            const target = parseInt(document.getElementById('goalAmount').value);
+            const accId = document.getElementById('goalAccountSelect').value;
+            
+            if(!name || !target) { alert('資料不完整'); return; }
+            
+            appData.goals.push({
+                id: 'goal_'+Date.now(),
+                name,
+                target,
+                accountId: accId,
+                completed: false, // New persistence flag
+                celebrated: false,
+                priority: appData.goals.length
+            });
+            saveData();
+            document.getElementById('goalModal').classList.add('hidden');
+            refreshUI();
+            checkGoals(true);
+        }
+
+        function deleteGoal(id) {
+            if(confirm('確定要放棄這個目標嗎？')) {
+                appData.goals = appData.goals.filter(g => g.id !== id);
+                saveData();
+                refreshUI();
+            }
+        }
+
+        function moveGoal(idx, dir) {
+            if(dir === -1 && idx > 0) {
+                [appData.goals[idx], appData.goals[idx-1]] = [appData.goals[idx-1], appData.goals[idx]];
+            } else if (dir === 1 && idx < appData.goals.length - 1) {
+                [appData.goals[idx], appData.goals[idx+1]] = [appData.goals[idx+1], appData.goals[idx]];
+            }
+            saveData();
+            refreshUI();
+        }
+
+        // 智能建議生成器
+        function getAdvice(gap) {
+            // Find most expensive category in expense transactions
+            const catTotals = {};
+            appData.transactions.filter(t => t.type === 'expense').forEach(t => {
+                catTotals[t.categoryId] = (catTotals[t.categoryId] || 0) + t.amount;
+            });
+            let maxCatId = null;
+            let maxAmount = 0;
+            for(const [id, amt] of Object.entries(catTotals)) {
+                if(amt > maxAmount) { maxAmount = amt; maxCatId = id; }
+            }
+            
+            const baseText = `還差 $${gap.toLocaleString()}。`;
+            if(maxCatId) {
+                const c = appData.categories.find(x => x.id === maxCatId);
+                return baseText + `建議：最近在「${c?c.name:'消費'}」花費較高，省一點就能達標囉！`;
+            }
+            return baseText + "加油，保持存錢習慣，很快就到了！";
+        }
+
+        function renderGoalList() {
+            const container = document.getElementById('goalsContainer');
+            if(appData.goals.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">尚無目標，快去設定吧！</div>';
+                return;
+            }
+
+            container.innerHTML = appData.goals.map((g, idx) => {
+                // Logic: Balance * Ent%
+                const accBal = getAccountBalance(g.accountId);
+                const entRatio = appData.allocation.entertainment / 100;
+                const availableForGoal = Math.floor(accBal * entRatio);
+                
+                // Persistence Logic: If completed, it stays completed regardless of current money
+                const isActuallyCompleted = g.completed || (availableForGoal >= g.target);
+                const progress = isActuallyCompleted ? 100 : Math.min(100, Math.max(0, (availableForGoal / g.target) * 100));
+                
+                // Advice logic
+                let adviceHtml = '';
+                if(isActuallyCompleted) {
+                    adviceHtml = `<div class="mt-2 text-xs text-green-600 bg-green-50 p-2 rounded">🎉 太棒了！目標已達成！這筆錢可以放心使用了。</div>`;
+                } else {
+                    const gap = g.target - availableForGoal;
+                    adviceHtml = `<div class="mt-2 text-xs text-indigo-600 bg-indigo-50 p-2 rounded">💡 ${getAdvice(gap)}</div>`;
+                }
+
+                return `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden transition-all ${isActuallyCompleted ? 'goal-completed' : ''}">
+                    ${isActuallyCompleted ? '<div class="absolute right-0 top-0 bg-yellow-400 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold shadow-sm">達成！</div>' : ''}
+                    
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-lg">${g.name}</h3>
+                            <p class="text-xs text-gray-400 mt-0.5">使用: ${appData.accounts.find(a=>a.id===g.accountId)?.name || '未知帳戶'}</p>
+                        </div>
+                        <div class="flex gap-1">
+                            ${idx > 0 ? `<button onclick="moveGoal(${idx}, -1)" class="text-gray-400 hover:text-black p-1">⬆️</button>` : ''}
+                            ${idx < appData.goals.length-1 ? `<button onclick="moveGoal(${idx}, 1)" class="text-gray-400 hover:text-black p-1">⬇️</button>` : ''}
+                            <button onclick="deleteGoal('${g.id}')" class="text-gray-300 hover:text-red-500 ml-1 p-1 font-bold">×</button>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full bg-gray-100 rounded-full h-3 mb-2 overflow-hidden">
+                        <div class="${isActuallyCompleted ? 'bg-yellow-400' : 'bg-indigo-500'} h-3 rounded-full transition-all duration-1000 ease-out" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs font-bold text-gray-500">
+                        <span>${Math.floor(progress)}% (${isActuallyCompleted ? '已鎖定' : '目前可用 $'+availableForGoal.toLocaleString()})</span>
+                        <span>目標 $${g.target.toLocaleString()}</span>
+                    </div>
+                    ${adviceHtml}
+                </div>
+                `;
+            }).join('');
+        }
+
+        function checkGoals(canFire) {
+            let newSuccess = false;
+            
+            appData.goals.forEach(g => {
+                if(g.completed) return; // Already locked
+                
+                const accBal = getAccountBalance(g.accountId);
+                const entRatio = appData.allocation.entertainment / 100;
+                const available = accBal * entRatio;
+                
+                if(available >= g.target) {
+                    g.completed = true; // Lock it!
+                    if(!g.celebrated && canFire) {
+                        newSuccess = true;
+                        g.celebrated = true; // Fire only once
+                    }
+                }
+            });
+            
+            saveData();
+            // Re-render immediately to show "Completed" state
+            renderGoalList(); 
+            
+            if(newSuccess) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 9999 });
+                setTimeout(() => alert("🎆 恭喜！你的娛樂基金已經達成目標囉！\n目標已標記為完成，可以安心去實現願望了！"), 300);
+            }
+        }
+
+        // --- 6. 報表邏輯 ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                const isActive = btn.dataset.target === tabId;
+                btn.className = `nav-item flex flex-col items-center justify-center w-full h-full transition-colors ${isActive?'text-gray-900':'text-gray-400'}`;
+            });
+            
+            if(tabId === 'view-stats') updateCharts();
+        }
+
+        function changeStatPeriod(p) {
+            statPeriod = p;
+            document.querySelectorAll('.stat-period-btn').forEach(b => {
+                b.className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn text-gray-500 hover:bg-gray-100";
+            });
+            document.getElementById('btn-'+p).className = "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn bg-gray-900 text-white shadow";
+            updateCharts();
+        }
+
+        function toggleChartType(type) {
+            chartType = type;
+            document.getElementById('chartTypeExp').className = `text-sm font-bold pb-1 border-b-2 transition-all ${type==='expense'?'border-gray-900':'border-transparent text-gray-400 hover:text-gray-600'}`;
+            document.getElementById('chartTypeInc').className = `text-sm font-bold pb-1 border-b-2 transition-all ${type==='income'?'border-gray-900':'border-transparent text-gray-400 hover:text-gray-600'}`;
+            updateCharts();
+        }
+
+        function updateCharts() {
+            const now = new Date();
+            const filteredTrans = appData.transactions.filter(t => {
+                const d = new Date(t.date);
+                if(statPeriod === 'week') {
+                    const oneWeekAgo = new Date(); oneWeekAgo.setDate(now.getDate()-7);
+                    return d >= oneWeekAgo;
+                }
+                if(statPeriod === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                if(statPeriod === 'year') return d.getFullYear() === now.getFullYear();
+                return true;
+            });
+
+            // 1. Chart Data
+            const targetTrans = filteredTrans.filter(t => t.type === chartType);
+            const catMap = {};
+            targetTrans.forEach(t => {
+                const catName = appData.categories.find(c => c.id === t.categoryId)?.name || '未知';
+                catMap[catName] = (catMap[catName] || 0) + t.amount;
+            });
+            
+            const labels = Object.keys(catMap);
+            const data = Object.values(catMap);
+            const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'];
+
+            // Handle no data
+            if(data.length === 0) {
+                document.getElementById('noChartData').classList.remove('hidden');
+            } else {
+                document.getElementById('noChartData').classList.add('hidden');
+            }
+
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data.length ? data : [1], 
+                        backgroundColor: data.length ? colors : ['transparent'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } }, cutout: '70%', animation: { animateScale: true } }
+            });
+
+            const total = data.reduce((a,b)=>a+b,0);
+            document.getElementById('categoryLegend').innerHTML = labels.map((l, i) => `
+                <div class="flex justify-between text-xs items-center p-1 hover:bg-gray-50 rounded">
+                    <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${colors[i%colors.length]}"></span>${l}</span>
+                    <span class="font-bold">$${catMap[l]} <span class="text-gray-400 font-normal">(${total?Math.round(catMap[l]/total*100):0}%)</span></span>
+                </div>
+            `).join('');
+
+            // 2. Bucket Analysis
+            const expTrans = filteredTrans.filter(t => t.type === 'expense');
+            const bucketMap = { living: 0, savings: 0, investment: 0, entertainment: 0 };
+            expTrans.forEach(t => {
+                const cat = appData.categories.find(c => c.id === t.categoryId);
+                if(cat && cat.bucket) bucketMap[cat.bucket] += t.amount;
+            });
+
+            document.getElementById('bucketAnalysis').innerHTML = `
+                ${renderBucketLine('🏠 生活 (Living)', bucketMap.living, 'bg-blue-500')}
+                ${renderBucketLine('💰 儲蓄 (Saving)', bucketMap.savings, 'bg-green-500')}
+                ${renderBucketLine('📈 投資 (Invest)', bucketMap.investment, 'bg-yellow-500')}
+                ${renderBucketLine('🎮 娛樂 (Fun)', bucketMap.entertainment, 'bg-purple-500')}
+            `;
+        }
+
+        function renderBucketLine(label, amount, colorClass) {
+            return `
+            <div class="flex justify-between items-center text-xs mb-1">
+                <span class="text-gray-600 font-medium">${label}</span>
+                <span class="font-bold">$${amount.toLocaleString()}</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-1.5 mb-3 overflow-hidden">
+                <div class="${colorClass} h-1.5 rounded-full" style="width: ${amount > 0 ? '100%' : '0%'}"></div>
+            </div>`;
+        }
+    </script>
+</body>
+</html>
