@@ -1,8 +1,4 @@
-# 2025-Vibe-Coding-AE110008
-
-⸻
-
-🚀 2025 Vibe Coding 期末專案：記帳 APP
+# 🚀 2025 Vibe Coding 期末專案：記帳 APP
 
 ⸻
 
