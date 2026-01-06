@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>極簡記帳 V12 - 專業數據版</title>
+    <title>極簡記帳 V15 - 負數餘額支援版</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -19,12 +19,12 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         /* 分頁與 Modal 動畫 */
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .modal { transition: opacity 0.3s ease-in-out; }
-        .modal.hidden { opacity: 0; pointer-events: none; }
-        .modal:not(.hidden) { opacity: 1; pointer-events: auto; }
-        /* 目標達成金邊特效 */
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .modal { transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out; }
+        .modal.hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
+        .modal:not(.hidden) { opacity: 1; pointer-events: auto; transform: scale(1); }
+        /* 目標達成特效 */
         .goal-completed { border: 2px solid #F59E0B; background: linear-gradient(to bottom right, #ffffff, #fffbeb); }
     </style>
 </head>
@@ -32,21 +32,35 @@
 
     <!-- 1. 頂部總覽區塊 -->
     <header class="bg-gray-900 text-white p-5 rounded-b-3xl shadow-lg z-20 shrink-0">
-        <div class="flex justify-between items-center mb-2">
-            <h1 class="text-lg font-bold tracking-wide">我的財務管家</h1>
-            <button onclick="openSettings()" class="text-2xl p-1 hover:rotate-90 transition duration-300">⚙️</button>
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
+                <span>💰</span> 我的財務管家
+            </h1>
+            <button onclick="openSettings()" class="text-2xl p-2 hover:bg-gray-800 rounded-full transition duration-300 active:scale-90 active:rotate-90">⚙️</button>
         </div>
-        <div class="text-center">
-            <p class="text-gray-400 text-sm mb-1">總資產</p>
+        <div class="text-center mb-2">
+            <p class="text-gray-400 text-xs mb-1 uppercase tracking-widest">Net Worth (總資產)</p>
             <div class="text-4xl font-bold text-white tracking-wider">
                 $<span id="totalAssets">0</span>
             </div>
-            <!-- 顯示目前的分配比例 -->
-            <div class="mt-3 text-xs text-gray-400 flex justify-center gap-3 bg-gray-800 py-1 px-3 rounded-full mx-auto w-fit">
-                <span>🏠生活 <span id="allocLiving" class="text-blue-300 font-bold">0%</span></span>
-                <span>💰儲蓄 <span id="allocSavings" class="text-green-300 font-bold">0%</span></span>
-                <span>📈投資 <span id="allocInvest" class="text-yellow-300 font-bold">0%</span></span>
-                <span>🎮娛樂 <span id="allocEnt" class="text-purple-300 font-bold">0%</span></span>
+        </div>
+        <!-- 顯示目前的分配比例 -->
+        <div class="flex justify-center gap-2 text-[10px] text-gray-400 bg-gray-800/50 p-2 rounded-xl backdrop-blur-sm mx-4 border border-gray-700">
+            <div class="flex flex-col items-center px-2 border-r border-gray-600">
+                <span class="text-blue-300 font-bold mb-0.5" id="allocLiving">0%</span>
+                <span>生活</span>
+            </div>
+            <div class="flex flex-col items-center px-2 border-r border-gray-600">
+                <span class="text-green-300 font-bold mb-0.5" id="allocSavings">0%</span>
+                <span>儲蓄</span>
+            </div>
+            <div class="flex flex-col items-center px-2 border-r border-gray-600">
+                <span class="text-yellow-300 font-bold mb-0.5" id="allocInvest">0%</span>
+                <span>投資</span>
+            </div>
+            <div class="flex flex-col items-center px-2">
+                <span class="text-purple-300 font-bold mb-0.5" id="allocEnt">0%</span>
+                <span>娛樂</span>
             </div>
         </div>
     </header>
@@ -61,95 +75,98 @@
             <div>
                 <div class="flex justify-between items-end mb-2 px-1">
                     <h2 class="text-sm font-bold text-gray-500 uppercase">我的帳戶</h2>
-                    <button onclick="openAccountModal()" class="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 shadow-sm active:scale-95 transition">+ 新增/管理</button>
+                    <button onclick="openAccountModal()" class="text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm active:scale-95 transition hover:bg-blue-100">＋ 管理</button>
                 </div>
                 <div class="flex overflow-x-auto space-x-3 pb-2 no-scrollbar" id="accountListContainer"></div>
             </div>
 
             <!-- 輸入卡片 -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
                 <!-- 收支切換 -->
-                <div class="flex bg-gray-100 p-1 rounded-xl mb-4 relative">
-                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300" id="btnExpense" onclick="setTransactionType('expense')">支出</div>
-                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300" id="btnIncome" onclick="setTransactionType('income')">收入</div>
-                    <div class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 left-1" id="toggleBg"></div>
+                <div class="flex bg-gray-100 p-1 rounded-2xl mb-5 relative">
+                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300 rounded-xl" id="btnExpense" onclick="setTransactionType('expense')">支出</div>
+                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300 rounded-xl" id="btnIncome" onclick="setTransactionType('income')">收入</div>
+                    <div class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-sm transition-all duration-300 left-1" id="toggleBg"></div>
                 </div>
 
                 <!-- 帳戶選擇 -->
-                <div class="mb-2">
-                    <select id="accountSelect" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm font-bold py-2 px-3 rounded-xl outline-none"></select>
+                <div class="mb-3">
+                    <select id="accountSelect" class="w-full bg-gray-50 border-0 text-gray-800 text-sm font-bold py-3 px-4 rounded-xl outline-none focus:ring-2 focus:ring-gray-200 transition"></select>
                 </div>
 
                 <!-- 金額 -->
-                <div class="mb-4 relative">
-                    <span class="absolute left-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">$</span>
-                    <input type="number" id="amountInput" placeholder="0" class="w-full text-3xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-gray-900 outline-none py-2 pl-6 bg-transparent transition-colors">
+                <div class="mb-5 relative group">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-gray-800 transition">$</span>
+                    <input type="number" id="amountInput" placeholder="0" class="w-full text-3xl font-bold text-gray-800 bg-gray-50 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-gray-900 transition placeholder-gray-300">
                 </div>
 
                 <!-- 備註 -->
-                <div class="mb-4">
-                     <input type="text" id="noteInput" placeholder="備註 (可選填)" class="w-full text-sm text-gray-600 border-b border-gray-100 focus:border-gray-400 outline-none py-2 bg-transparent">
+                <div class="mb-5">
+                     <input type="text" id="noteInput" placeholder="備註 (例如: 午餐、薪水)" class="w-full text-sm text-gray-600 bg-gray-50 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-gray-200 transition">
                 </div>
 
                 <!-- 分類 -->
-                <div class="flex justify-between items-center mb-2">
-                    <label class="text-xs font-bold text-gray-400 uppercase">選擇分類</label>
-                    <button onclick="openCategoryManager()" class="text-xs text-gray-500 hover:text-black bg-gray-100 px-2 py-0.5 rounded">管理分類 ⚙️</button>
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">選擇分類</label>
+                    <button onclick="openCategoryManager()" class="text-[10px] font-bold text-gray-500 hover:text-black bg-gray-100 px-2 py-1 rounded-lg transition">編輯分類 ⚙️</button>
                 </div>
-                <div class="grid grid-cols-5 gap-2 mb-4" id="categoryGrid"></div>
+                <div class="grid grid-cols-5 gap-2 mb-6" id="categoryGrid"></div>
                 
                 <!-- 按鈕 -->
-                <button onclick="addTransaction()" id="addBtn" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">＋ 新增支出</button>
+                <button onclick="addTransaction()" id="addBtn" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-black flex justify-center items-center gap-2">
+                    <span>＋</span> <span id="addBtnText">新增支出</span>
+                </button>
             </div>
 
             <!-- 列表 -->
             <div>
-                <h2 class="text-lg font-bold text-gray-800 mb-2 px-1">最近紀錄</h2>
-                <div id="transactionList" class="space-y-3 pb-20"></div>
+                <h2 class="text-lg font-bold text-gray-800 mb-3 px-1">最近紀錄</h2>
+                <div id="transactionList" class="space-y-3 pb-24 min-h-[100px]"></div>
             </div>
         </div>
 
         <!-- === 分頁 2: 報表 (Stats) === -->
         <div id="view-stats" class="tab-content h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-6">
             
-            <!-- 時間篩選 (增強版) -->
-            <div class="flex gap-2 bg-white p-1 rounded-xl border border-gray-100 shadow-sm items-center">
-                <button onclick="changeStatPeriod('week')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn bg-gray-900 text-white" id="btn-week">本週</button>
-                <button onclick="changeStatPeriod('month')" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn text-gray-500 hover:bg-gray-100" id="btn-month">本月</button>
-                <div class="flex-1 relative">
-                    <button onclick="changeStatPeriod('year')" class="w-full py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn text-gray-500 hover:bg-gray-100" id="btn-year">年度</button>
-                    <!-- 年份選擇器 (隱藏/顯示) -->
+            <!-- 時間篩選 -->
+            <div class="flex gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm items-center">
+                <button onclick="changeStatPeriod('week')" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn bg-gray-900 text-white shadow-md" id="btn-week">本週</button>
+                <button onclick="changeStatPeriod('month')" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn text-gray-500 hover:bg-gray-50" id="btn-month">本月</button>
+                <div class="flex-1 relative group">
+                    <button onclick="changeStatPeriod('year')" class="w-full py-2 text-xs font-bold rounded-xl transition-all stat-period-btn text-gray-500 hover:bg-gray-50 flex justify-center items-center gap-1" id="btn-year">
+                        <span id="yearBtnText">年度</span>
+                    </button>
+                    <!-- 年份選擇器 -->
                     <select id="yearSelect" onchange="updateCharts()" class="hidden absolute inset-0 opacity-0 w-full h-full cursor-pointer"></select>
-                    <!-- 顯示當前年份文字 (輔助) -->
-                    <span id="currentYearLabel" class="hidden absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none">▼</span>
                 </div>
             </div>
             
             <!-- 收支切換 -->
-            <div class="flex justify-center gap-6 border-b border-gray-200 pb-2">
-                 <button onclick="toggleChartType('expense')" id="chartTypeExp" class="text-sm font-bold border-b-2 border-gray-900 pb-1 px-2 transition-all">支出分析</button>
-                 <button onclick="toggleChartType('income')" id="chartTypeInc" class="text-sm font-bold text-gray-400 pb-1 border-b-2 border-transparent px-2 hover:text-gray-600 transition-all">收入分析</button>
+            <div class="flex justify-center gap-8 border-b border-gray-200 pb-1">
+                 <button onclick="toggleChartType('expense')" id="chartTypeExp" class="text-sm font-bold border-b-2 border-gray-900 pb-2 px-2 transition-all">支出分析</button>
+                 <button onclick="toggleChartType('income')" id="chartTypeInc" class="text-sm font-bold text-gray-400 pb-2 border-b-2 border-transparent px-2 hover:text-gray-600 transition-all">收入分析</button>
             </div>
 
             <!-- 圓餅圖 -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center relative">
-                <!-- 標題顯示當前統計範圍 -->
-                <h4 id="chartRangeLabel" class="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wide">統計範圍</h4>
-                
-                <div class="w-3/4 mx-auto">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center relative min-h-[300px] flex flex-col justify-center">
+                <h4 id="chartRangeLabel" class="absolute top-4 left-0 right-0 text-xs text-gray-400 font-bold uppercase tracking-wide">統計範圍</h4>
+                <div class="w-4/5 mx-auto mb-4">
                     <canvas id="categoryChart"></canvas>
                 </div>
-                <div id="categoryLegend" class="mt-4 space-y-2 text-left"></div>
-                <div id="noChartData" class="hidden absolute inset-0 flex items-center justify-center bg-white/80 text-gray-400 text-sm">無資料</div>
+                <div id="categoryLegend" class="mt-2 space-y-2 text-left max-h-40 overflow-y-auto custom-scrollbar"></div>
+                <div id="noChartData" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10">
+                    <span class="text-4xl mb-2">📉</span>
+                    <span class="text-gray-400 text-sm font-bold">此期間無資料</span>
+                </div>
             </div>
             
             <!-- 屬性分析 -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <span>資金流向分析</span>
-                    <span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded">依分類屬性</span>
+                    <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">依分類屬性</span>
                 </h3>
-                <div id="bucketAnalysis" class="space-y-4"></div>
+                <div id="bucketAnalysis" class="space-y-5"></div>
             </div>
         </div>
 
@@ -157,35 +174,47 @@
         <div id="view-goals" class="tab-content h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-4">
             <div class="flex justify-between items-center px-1">
                 <h2 class="text-lg font-bold text-gray-800">我的願望清單</h2>
-                <button onclick="openGoalModal()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded-full font-bold shadow hover:bg-indigo-700 active:scale-95 transition">+ 新增目標</button>
+                <button onclick="openGoalModal()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition flex items-center gap-1">
+                    <span>＋</span> 新增目標
+                </button>
             </div>
             
-            <div class="bg-blue-50 border border-blue-100 p-3 rounded-lg text-xs text-blue-700 leading-relaxed mb-2">
-                💡 <b>聰明存錢：</b> 資金會依照<b>列表順序</b>依序分配。請使用右側箭頭調整您最想先達成的目標！
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-4 rounded-2xl text-xs text-blue-800 leading-relaxed shadow-sm">
+                💡 <b>聰明存錢法：</b><br>
+                系統採用「瀑布流」邏輯。資金會優先填滿<b>第一順位</b>的目標。若帳戶為負數，將暫停累積進度。
             </div>
 
-            <div id="goalsContainer" class="space-y-4 pb-20"></div>
+            <div id="goalsContainer" class="space-y-4 pb-24 min-h-[200px]"></div>
         </div>
     </main>
 
     <!-- 3. 底部導航列 -->
-    <nav class="bg-white border-t border-gray-200 fixed bottom-0 w-full max-w-md pb-safe z-30 flex justify-around items-center h-16 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button onclick="switchTab('view-home')" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-900 active:bg-gray-50" data-target="view-home">
-            <span class="text-xl mb-0.5">📝</span><span class="text-[10px] font-bold">記帳</span>
+    <nav class="bg-white border-t border-gray-100 fixed bottom-0 w-full max-w-md pb-safe z-30 flex justify-around items-center h-20 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)] rounded-t-3xl">
+        <button onclick="switchTab('view-home')" class="nav-item group flex flex-col items-center justify-center w-full h-full text-gray-900" data-target="view-home">
+            <div class="bg-gray-100 group-[.active]:bg-gray-900 group-[.active]:text-white p-2 rounded-xl transition-all duration-300 mb-1">
+                <span class="text-xl block w-6 h-6 flex items-center justify-center">📝</span>
+            </div>
+            <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-gray-900 transition-colors">記帳</span>
         </button>
-        <button onclick="switchTab('view-stats')" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 active:bg-gray-50" data-target="view-stats">
-            <span class="text-xl mb-0.5">📊</span><span class="text-[10px] font-bold">報表</span>
+        <button onclick="switchTab('view-stats')" class="nav-item group flex flex-col items-center justify-center w-full h-full text-gray-400" data-target="view-stats">
+            <div class="bg-transparent group-[.active]:bg-gray-900 group-[.active]:text-white p-2 rounded-xl transition-all duration-300 mb-1">
+                <span class="text-xl block w-6 h-6 flex items-center justify-center">📊</span>
+            </div>
+            <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-gray-900 transition-colors">報表</span>
         </button>
-        <button onclick="switchTab('view-goals')" class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400 active:bg-gray-50" data-target="view-goals">
-            <span class="text-xl mb-0.5">🎯</span><span class="text-[10px] font-bold">目標</span>
+        <button onclick="switchTab('view-goals')" class="nav-item group flex flex-col items-center justify-center w-full h-full text-gray-400" data-target="view-goals">
+            <div class="bg-transparent group-[.active]:bg-gray-900 group-[.active]:text-white p-2 rounded-xl transition-all duration-300 mb-1">
+                <span class="text-xl block w-6 h-6 flex items-center justify-center">🎯</span>
+            </div>
+            <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-gray-900 transition-colors">目標</span>
         </button>
     </nav>
 
-    <!-- === Modals 彈窗區域 === -->
+    <!-- === Modals === -->
 
-    <!-- 提醒通知 Modal -->
-    <div id="reminderModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl">
+    <!-- 提醒通知 -->
+    <div id="reminderModal" class="modal hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl scale-100">
             <div class="text-5xl mb-4">🔔</div>
             <h2 class="text-xl font-bold text-gray-900 mb-2">記帳提醒</h2>
             <p class="text-gray-500 mb-6 text-sm">今天還沒有記帳喔！花一分鐘記錄一下今天的開銷吧？</p>
@@ -193,87 +222,136 @@
         </div>
     </div>
 
-    <!-- 新手導引 Modal -->
+    <!-- 新手導引 -->
     <div id="onboardingModal" class="modal hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl">
-            <div class="text-5xl mb-4">👋</div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">歡迎使用！</h2>
-            <p class="text-gray-500 mb-6 text-sm leading-relaxed text-left bg-gray-50 p-4 rounded-xl">
-                1. <b>設定比例</b>：點擊右上角 ⚙️ 設定生活、儲蓄等佔比。<br>
-                2. <b>排序目標</b>：新增目標後，調整順序，系統會優先幫你達成第一順位的願望！<br>
-                3. <b>查看報表</b>：可切換年份查看歷史消費。
+        <div class="bg-white w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl">
+            <div class="text-6xl mb-6">👋</div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-3">歡迎使用！</h2>
+            <p class="text-gray-500 mb-8 text-sm leading-relaxed text-left bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                1. <b>設定比例</b>：點擊右上角 ⚙️ 設定生活、儲蓄等佔比。<br><br>
+                2. <b>排序目標</b>：新增目標後，調整上下順序，系統會優先幫你達成第一順位的願望！<br><br>
+                3. <b>支援負數</b>：現在支援透支記帳，帳戶餘額為負數時會以紅色顯示。
             </p>
-            <button onclick="closeOnboarding()" class="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:scale-105 transition shadow-lg">開始規劃 🚀</button>
+            <button onclick="closeOnboarding()" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold hover:scale-105 transition shadow-xl text-lg">開始規劃 🚀</button>
         </div>
     </div>
 
     <!-- 設定 Modal -->
     <div id="settingsModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">偏好設定</h3>
+        <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl h-4/5 flex flex-col">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 text-center">偏好設定</h3>
             
-            <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-4">
-                <p class="text-xs font-bold text-gray-500 mb-3">資產分配比例 (總和 100%)</p>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between"><label class="text-sm font-bold text-blue-600">🏠 生活</label><input type="number" id="setLiving" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-blue-500 transition"></div>
-                    <div class="flex items-center justify-between"><label class="text-sm font-bold text-green-600">💰 儲蓄</label><input type="number" id="setSavings" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-green-500 transition"></div>
-                    <div class="flex items-center justify-between"><label class="text-sm font-bold text-yellow-600">📈 投資</label><input type="number" id="setInvest" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-yellow-500 transition"></div>
-                    <div class="flex items-center justify-between"><label class="text-sm font-bold text-purple-600">🎮 娛樂</label><input type="number" id="setEnt" class="w-16 bg-white rounded p-1 text-center font-bold outline-none border focus:border-purple-500 transition"></div>
+            <div class="overflow-y-auto flex-1 custom-scrollbar pr-1 space-y-4">
+                <!-- 比例設定 -->
+                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <p class="text-xs font-bold text-gray-500 mb-4 uppercase tracking-wide">資產分配比例 (總和 100%)</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-blue-600 flex items-center gap-2"><span>🏠</span> 生活</label><input type="number" id="setLiving" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-blue-500 transition shadow-sm"></div>
+                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-green-600 flex items-center gap-2"><span>💰</span> 儲蓄</label><input type="number" id="setSavings" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-green-500 transition shadow-sm"></div>
+                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-yellow-600 flex items-center gap-2"><span>📈</span> 投資</label><input type="number" id="setInvest" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-yellow-500 transition shadow-sm"></div>
+                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-purple-600 flex items-center gap-2"><span>🎮</span> 娛樂</label><input type="number" id="setEnt" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-purple-500 transition shadow-sm"></div>
+                    </div>
+                    <div class="text-right text-xs font-bold mt-3" id="totalRatioDisplay">總計: 100%</div>
                 </div>
-                <div class="text-right text-xs font-bold mt-2" id="totalRatioDisplay">總計: 100%</div>
+
+                <!-- 提醒設定 -->
+                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <div class="flex justify-between items-center mb-3">
+                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">每日記帳提醒</p>
+                        <input type="checkbox" id="setReminderToggle" class="accent-gray-900 w-5 h-5 cursor-pointer" onchange="toggleReminderInput()">
+                    </div>
+                    <div id="reminderTimeBlock" class="hidden">
+                        <input type="time" id="setReminderTime" class="w-full bg-white border rounded-xl p-2 text-sm outline-none shadow-sm">
+                    </div>
+                </div>
+
+                <!-- 危險區域 -->
+                <div class="mt-8 pt-4 border-t border-gray-100">
+                    <button onclick="resetAllData()" class="w-full text-red-400 text-xs font-bold hover:text-red-600 py-2 border border-transparent hover:border-red-100 rounded-xl transition">⚠️ 重置所有資料</button>
+                </div>
             </div>
 
-            <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-4">
-                <div class="flex justify-between items-center mb-2"><p class="text-xs font-bold text-gray-500">🔔 每日記帳提醒</p><input type="checkbox" id="setReminderToggle" class="accent-gray-900 w-4 h-4 cursor-pointer" onchange="toggleReminderInput()"></div>
-                <div id="reminderTimeBlock" class="hidden"><input type="time" id="setReminderTime" class="w-full bg-white border rounded p-2 text-sm outline-none"></div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="closeSettings()" class="py-2 text-gray-500 font-bold rounded-lg hover:bg-gray-100">取消</button>
-                <button onclick="saveSettings()" class="py-2 bg-gray-900 text-white rounded-lg font-bold shadow hover:bg-black">儲存設定</button>
+            <div class="grid grid-cols-2 gap-3 mt-4 flex-shrink-0 pt-2 border-t border-gray-100">
+                <button onclick="closeSettings()" class="py-3 text-gray-500 font-bold rounded-xl hover:bg-gray-50 transition">取消</button>
+                <button onclick="saveSettings()" class="py-3 bg-gray-900 text-white rounded-xl font-bold shadow-lg hover:bg-black transition active:scale-95">儲存</button>
             </div>
         </div>
     </div>
 
     <!-- 帳戶管理 Modal -->
     <div id="accountModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-2xl p-6">
-            <h3 class="text-lg font-bold mb-4" id="accModalTitle">新增帳戶</h3>
+        <div class="bg-white w-full max-w-xs rounded-3xl p-6">
+            <h3 class="text-lg font-bold mb-6 text-center" id="accModalTitle">新增帳戶</h3>
             <input type="hidden" id="accId">
-            <label class="text-xs text-gray-500 mb-1 block">帳戶名稱</label><input type="text" id="accName" class="w-full bg-gray-50 border mb-3 rounded-lg p-2 outline-none">
-            <label class="text-xs text-gray-500 mb-1 block">初始餘額</label><input type="number" id="accBalance" class="w-full bg-gray-50 border mb-6 rounded-lg p-2 outline-none">
-            <div class="flex gap-2"><button onclick="document.getElementById('accountModal').classList.add('hidden')" class="flex-1 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg">取消</button><button onclick="saveAccount()" class="flex-1 py-2 bg-gray-900 text-white rounded-lg font-bold shadow hover:bg-black">儲存</button></div>
-            <button onclick="deleteAccountCurrent()" id="btnDelAcc" class="w-full mt-4 text-red-500 text-xs py-2 font-bold hover:bg-red-50 rounded hidden">刪除此帳戶</button>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">帳戶名稱</label>
+                    <input type="text" id="accName" placeholder="例如: 薪轉戶" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-gray-200 transition">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">初始餘額 (可為負數)</label>
+                    <input type="number" id="accBalance" placeholder="0" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-gray-200 transition">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="document.getElementById('accountModal').classList.add('hidden')" class="py-3 text-gray-500 font-bold rounded-xl hover:bg-gray-50">取消</button>
+                <button onclick="saveAccount()" class="py-3 bg-gray-900 text-white rounded-xl font-bold shadow-lg hover:bg-black active:scale-95 transition">儲存</button>
+            </div>
+            <button onclick="deleteAccountCurrent()" id="btnDelAcc" class="w-full mt-4 text-red-400 text-xs py-2 font-bold hover:bg-red-50 rounded-xl transition hidden">刪除此帳戶</button>
         </div>
     </div>
 
     <!-- 分類管理 Modal -->
     <div id="categoryModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-2xl p-6 h-4/5 flex flex-col">
-            <h3 class="text-lg font-bold mb-4 flex-shrink-0">管理分類</h3>
-            <div class="bg-gray-50 p-3 rounded-lg mb-4 flex-shrink-0 border border-gray-200">
-                <p class="text-xs font-bold text-gray-500 mb-2">新增分類</p>
-                <div class="grid grid-cols-5 gap-2 mb-2 h-24 overflow-y-auto border p-1 bg-white rounded custom-scrollbar" id="iconPicker"></div>
-                <input type="text" id="newCatName" placeholder="名稱" class="w-full border rounded p-1.5 text-sm mb-2 outline-none">
-                <select id="newCatBucket" class="w-full border rounded p-1.5 text-sm mb-2 outline-none bg-white">
-                    <option value="living">🏠 生活 (Living)</option><option value="entertainment">🎮 娛樂 (Fun)</option><option value="savings">💰 儲蓄 (Saving)</option><option value="investment">📈 投資 (Invest)</option>
+        <div class="bg-white w-full max-w-xs rounded-3xl p-6 h-4/5 flex flex-col">
+            <h3 class="text-lg font-bold mb-4 flex-shrink-0 text-center">管理分類</h3>
+            
+            <div class="bg-gray-50 p-4 rounded-2xl mb-4 flex-shrink-0 border border-gray-100">
+                <p class="text-xs font-bold text-gray-500 mb-3">新增分類</p>
+                <div class="grid grid-cols-5 gap-2 mb-3 h-24 overflow-y-auto border p-2 bg-white rounded-xl custom-scrollbar" id="iconPicker"></div>
+                <input type="text" id="newCatName" placeholder="分類名稱" class="w-full border border-gray-200 rounded-lg p-2 text-sm mb-2 outline-none focus:border-gray-400">
+                <select id="newCatBucket" class="w-full border border-gray-200 rounded-lg p-2 text-sm mb-2 outline-none bg-white focus:border-gray-400">
+                    <option value="living">🏠 生活 (Living)</option>
+                    <option value="entertainment">🎮 娛樂 (Fun)</option>
+                    <option value="savings">💰 儲蓄 (Saving)</option>
+                    <option value="investment">📈 投資 (Invest)</option>
                 </select>
-                <button onclick="addNewCategory()" class="w-full bg-gray-900 text-white text-xs py-2 rounded font-bold shadow hover:bg-black">＋ 新增</button>
+                <button onclick="addNewCategory()" class="w-full bg-gray-900 text-white text-xs py-2.5 rounded-lg font-bold shadow hover:bg-black transition">＋ 新增</button>
             </div>
-            <p class="text-xs font-bold text-gray-500 mb-2 flex-shrink-0">現有分類</p>
-            <div id="categoryListEdit" class="space-y-2 overflow-y-auto flex-1 custom-scrollbar pr-1"></div>
-            <button onclick="document.getElementById('categoryModal').classList.add('hidden')" class="w-full mt-4 py-3 border rounded-xl text-gray-600 font-bold hover:bg-gray-100 flex-shrink-0">完成</button>
+            
+            <p class="text-xs font-bold text-gray-500 mb-2 flex-shrink-0 px-1">現有分類 (點擊刪除)</p>
+            <div id="categoryListEdit" class="space-y-2 overflow-y-auto flex-1 custom-scrollbar pr-1 pb-2"></div>
+            
+            <button onclick="document.getElementById('categoryModal').classList.add('hidden')" class="w-full mt-4 py-3 border border-gray-200 rounded-2xl text-gray-600 font-bold hover:bg-gray-50 flex-shrink-0 transition">完成</button>
         </div>
     </div>
 
     <!-- 目標 Modal -->
     <div id="goalModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-2xl p-6">
-            <h3 class="text-lg font-bold mb-4">設定新目標</h3>
-            <label class="text-xs text-gray-500 mb-1 block">目標名稱</label><input type="text" id="goalName" class="w-full bg-gray-50 border mb-3 rounded-lg p-2 outline-none">
-            <label class="text-xs text-gray-500 mb-1 block">目標金額</label><input type="number" id="goalAmount" class="w-full bg-gray-50 border mb-3 rounded-lg p-2 outline-none">
-            <div class="mb-6"><label class="text-xs text-gray-500 block mb-1">使用哪個帳戶的「娛樂基金」？</label><select id="goalAccountSelect" class="w-full bg-gray-50 border rounded-lg p-2 outline-none text-sm"></select></div>
-            <div class="flex gap-2"><button onclick="document.getElementById('goalModal').classList.add('hidden')" class="flex-1 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg">取消</button><button onclick="saveGoal()" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold shadow hover:bg-indigo-700">確認儲存</button></div>
+        <div class="bg-white w-full max-w-xs rounded-3xl p-6">
+            <h3 class="text-lg font-bold mb-6 text-center">設定新目標</h3>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">目標名稱</label>
+                    <input type="text" id="goalName" placeholder="例: 買新手機" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-100 transition">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">目標金額</label>
+                    <input type="number" id="goalAmount" placeholder="0" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-100 transition">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">使用哪個帳戶的「娛樂基金」？</label>
+                    <select id="goalAccountSelect" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none text-sm focus:ring-2 focus:ring-indigo-100 transition"></select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="document.getElementById('goalModal').classList.add('hidden')" class="py-3 text-gray-500 font-bold rounded-xl hover:bg-gray-50">取消</button>
+                <button onclick="saveGoal()" class="py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition">確認</button>
+            </div>
         </div>
     </div>
 
@@ -294,14 +372,14 @@
             ],
             goals: [], 
             allocation: { living: 50, savings: 20, investment: 10, entertainment: 20 },
-            settings: { reminderEnabled: false, reminderTime: '20:00' }, // Cleaned up settings
+            settings: { reminderEnabled: false, reminderTime: '20:00' }, 
             isFirstTime: true
         };
 
-        const availableIcons = ['🍔','🍱','🍜','🍣','🍎','🍺','☕','🚗','🚕','✈️','🏠','💡','📱','💊','🛍️','🎁','🎮','🎬','🐶','📚','💰','💵','🏥','🏋️','🏝️','🎤','👗','💄','🚲','⛽'];
+        const availableIcons = ['🍔','🍱','🍜','🍣','🍎','🍺','☕','🚗','🚕','✈️','🏠','💡','📱','💊','🛍️','🎁','🎮','🎬','🐶','📚','💰','💵','🏥','🏋️','🏝️','🎤','👗','💄','🚲','⛽','🛒','💇','🧸'];
         let myChart = null;
-        let statPeriod = 'week'; // 'week', 'month', 'year'
-        let selectedStatYear = new Date().getFullYear(); // For Historical View
+        let statPeriod = 'week'; 
+        let selectedStatYear = new Date().getFullYear();
         let chartType = 'expense';
         let selectedIcon = availableIcons[0];
         let currentTransType = 'expense';
@@ -317,16 +395,15 @@
         };
 
         function loadData() {
-            const saved = localStorage.getItem('v12_app_data'); // Updated Key
+            const saved = localStorage.getItem('v15_app_data'); // Updated key for V15
             if(saved) {
                 const parsed = JSON.parse(saved);
                 appData = { ...appData, ...parsed };
-                // Ensure settings structure
                 if(!appData.settings) appData.settings = { reminderEnabled: false, reminderTime: '20:00' };
                 appData.categories.forEach(c => { if(!c.bucket) c.bucket = 'living'; });
             }
         }
-        function saveData() { localStorage.setItem('v12_app_data', JSON.stringify(appData)); }
+        function saveData() { localStorage.setItem('v15_app_data', JSON.stringify(appData)); }
 
         function checkReminder() {
             const today = new Date().toDateString();
@@ -352,7 +429,7 @@
             document.getElementById('setReminderTime').value = appData.settings.reminderTime;
             toggleReminderInput();
             updateRatioTotal();
-            if(document.getElementById('view-stats').style.display === 'block') updateCharts();
+            if(document.getElementById('view-stats').classList.contains('active')) updateCharts();
         }
 
         // --- Logic Functions ---
@@ -375,6 +452,12 @@
             appData.settings.reminderTime = document.getElementById('setReminderTime').value;
             saveData(); closeSettings(); refreshUI(); checkGoals(true); 
         }
+        function resetAllData() {
+            if(confirm("確定要重置所有資料嗎？\n這將刪除所有記帳紀錄、目標與設定，且無法復原。")) {
+                localStorage.removeItem('v15_app_data');
+                location.reload();
+            }
+        }
 
         function getAccountBalance(accId) {
             const acc = appData.accounts.find(a => a.id === accId); if(!acc) return 0;
@@ -382,16 +465,36 @@
             return acc.initialBalance + trans.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0) - trans.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
         }
         function getTotalAssets() { return appData.accounts.reduce((sum, acc) => sum + getAccountBalance(acc.id), 0); }
+        
         function renderHeader() {
-            document.getElementById('totalAssets').innerText = getTotalAssets().toLocaleString();
-            ['Living','Savings','Invest','Ent'].forEach(k => document.getElementById('alloc'+k).innerText = appData.allocation[k.toLowerCase()]+'%');
+            const total = getTotalAssets();
+            const totalEl = document.getElementById('totalAssets');
+            totalEl.innerText = total.toLocaleString();
+            // Color code total assets
+            totalEl.className = `text-4xl font-bold tracking-wider ${total < 0 ? 'text-red-400' : 'text-white'}`;
+
+            document.getElementById('allocLiving').innerText = appData.allocation.living + '%';
+            document.getElementById('allocSavings').innerText = appData.allocation.savings + '%';
+            document.getElementById('allocInvest').innerText = appData.allocation.investment + '%';
+            document.getElementById('allocEnt').innerText = appData.allocation.entertainment + '%';
         }
+
         function renderAccounts() {
-            document.getElementById('accountListContainer').innerHTML = appData.accounts.map(acc => `<div onclick="editAccount('${acc.id}')" class="flex-shrink-0 bg-white border border-gray-200 rounded-xl p-3 w-32 shadow-sm flex flex-col justify-between cursor-pointer hover:border-gray-400 transition"><span class="text-xs text-gray-500 font-bold truncate">${acc.name}</span><span class="text-lg font-bold text-gray-900 truncate">$${getAccountBalance(acc.id).toLocaleString()}</span></div>`).join('');
+            const container = document.getElementById('accountListContainer');
+            if(appData.accounts.length === 0) {
+                container.innerHTML = '<div class="text-xs text-gray-400 p-2">點擊「管理」新增帳戶</div>';
+            } else {
+                container.innerHTML = appData.accounts.map(acc => {
+                    const bal = getAccountBalance(acc.id);
+                    const balClass = bal < 0 ? 'text-red-500' : 'text-gray-900';
+                    return `<div onclick="editAccount('${acc.id}')" class="flex-shrink-0 bg-white border border-gray-100 rounded-2xl p-3 w-32 shadow-sm flex flex-col justify-between cursor-pointer hover:border-blue-200 hover:shadow-md transition group"><span class="text-xs text-gray-500 font-bold truncate group-hover:text-blue-500 transition">${acc.name}</span><span class="text-lg font-bold ${balClass} truncate">$${bal.toLocaleString()}</span></div>`
+                }).join('');
+            }
         }
         function updateAccountSelects() {
             const h = appData.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-            document.getElementById('accountSelect').innerHTML = h; document.getElementById('goalAccountSelect').innerHTML = h;
+            document.getElementById('accountSelect').innerHTML = h || '<option>請先建立帳戶</option>'; 
+            document.getElementById('goalAccountSelect').innerHTML = h || '<option>請先建立帳戶</option>';
         }
         function openAccountModal(id) {
             const m = document.getElementById('accountModal'); m.classList.remove('hidden');
@@ -400,23 +503,24 @@
             document.getElementById('accId').value = acc?acc.id:'';
             document.getElementById('accName').value = acc?acc.name:'';
             document.getElementById('accBalance').value = acc?acc.initialBalance:'';
-            document.getElementById('btnDelAcc').className = acc ? "w-full mt-4 text-red-500 text-xs py-2 font-bold hover:bg-red-50 rounded" : "hidden";
+            document.getElementById('btnDelAcc').className = acc ? "w-full mt-4 text-red-400 text-xs py-2 font-bold hover:bg-red-50 rounded-xl transition" : "hidden";
         }
         function editAccount(id){ openAccountModal(id); }
         function saveAccount() {
             const id = document.getElementById('accId').value, name = document.getElementById('accName').value, bal = parseInt(document.getElementById('accBalance').value);
             if(!name) return alert('請輸入名稱');
+            // Allow negative initial balance (no check for < 0)
             if(id) { const idx = appData.accounts.findIndex(a=>a.id===id); appData.accounts[idx].name=name; appData.accounts[idx].initialBalance=bal||0; }
             else appData.accounts.push({ id: 'acc_'+Date.now(), name, initialBalance: bal||0 });
             saveData(); document.getElementById('accountModal').classList.add('hidden'); refreshUI(); checkGoals(true);
         }
         function deleteAccountCurrent() {
             if(appData.accounts.length<=1) return alert('至少保留一個帳戶');
-            if(confirm('刪除此帳戶？')) { appData.accounts = appData.accounts.filter(a=>a.id!==document.getElementById('accId').value); saveData(); document.getElementById('accountModal').classList.add('hidden'); refreshUI(); }
+            if(confirm('刪除此帳戶？相關記帳資料將會顯示為未知帳戶。')) { appData.accounts = appData.accounts.filter(a=>a.id!==document.getElementById('accId').value); saveData(); document.getElementById('accountModal').classList.add('hidden'); refreshUI(); }
         }
 
         function openCategoryManager() { document.getElementById('categoryModal').classList.remove('hidden'); renderIconPicker(); renderCategoryListEdit(); }
-        function renderIconPicker() { document.getElementById('iconPicker').innerHTML = availableIcons.map(i=>`<div onclick="selectedIcon='${i}';renderIconPicker()" class="text-center text-xl cursor-pointer p-1 rounded ${selectedIcon===i?'bg-gray-800 text-white':'hover:bg-gray-100'}">${i}</div>`).join(''); }
+        function renderIconPicker() { document.getElementById('iconPicker').innerHTML = availableIcons.map(i=>`<div onclick="selectedIcon='${i}';renderIconPicker()" class="text-center text-xl cursor-pointer p-1 rounded-lg transition ${selectedIcon===i?'bg-gray-800 text-white scale-110 shadow-md':'hover:bg-gray-100'}">${i}</div>`).join(''); }
         function addNewCategory() {
             const name = document.getElementById('newCatName').value;
             if(!name) return alert('輸入名稱');
@@ -424,40 +528,47 @@
             saveData(); renderCategoryListEdit(); renderCategoryGrid(); document.getElementById('newCatName').value='';
         }
         function renderCategoryListEdit() {
-            document.getElementById('categoryListEdit').innerHTML = appData.categories.map(c=>`<div class="flex justify-between items-center bg-white p-2 rounded border mb-1"><div class="flex items-center gap-2"><span>${c.icon}</span><span class="text-sm font-bold">${c.name}</span><span class="text-[10px] bg-gray-100 px-1 rounded">${c.bucket}</span></div><button onclick="deleteCategory('${c.id}')" class="text-red-500 font-bold px-2">×</button></div>`).join('');
+            document.getElementById('categoryListEdit').innerHTML = appData.categories.map(c=>`<div class="flex justify-between items-center bg-white p-2 rounded-xl border border-gray-100 mb-1.5 shadow-sm"><div class="flex items-center gap-2"><span>${c.icon}</span><span class="text-sm font-bold text-gray-700">${c.name}</span><span class="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">${c.bucket}</span></div><button onclick="deleteCategory('${c.id}')" class="text-gray-300 hover:text-red-500 font-bold px-2 transition">×</button></div>`).join('');
         }
         function deleteCategory(id) { if(confirm('刪除？')) { appData.categories = appData.categories.filter(c=>c.id!==id); saveData(); renderCategoryListEdit(); renderCategoryGrid(); } }
         function setTransactionType(t) {
             currentTransType = t;
             document.getElementById('toggleBg').style.left = t==='expense'?'4px':'50%';
-            document.getElementById('btnExpense').className = t==='expense'?'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300':'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300';
-            document.getElementById('btnIncome').className = t==='income'?'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300':'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300';
-            const btn = document.getElementById('addBtn'); btn.innerText = t==='expense'?'＋ 新增支出':'＋ 新增收入'; btn.className = t==='expense'?'w-full bg-gray-900 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all':'w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all';
-            document.getElementById('amountInput').className = t==='expense'?'w-full text-3xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-gray-900 outline-none py-2 pl-6 bg-transparent transition-colors':'w-full text-3xl font-bold text-green-600 border-b-2 border-gray-200 focus:border-green-600 outline-none py-2 pl-6 bg-transparent transition-colors';
+            document.getElementById('btnExpense').className = t==='expense'?'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300 rounded-xl':'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300 rounded-xl';
+            document.getElementById('btnIncome').className = t==='income'?'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300 rounded-xl':'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300 rounded-xl';
+            const btn = document.getElementById('addBtn'); 
+            const txt = document.getElementById('addBtnText');
+            txt.innerText = t==='expense'?'新增支出':'新增收入'; 
+            btn.className = t==='expense'?'w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-black flex justify-center items-center gap-2':'w-full bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-green-700 flex justify-center items-center gap-2';
+            document.getElementById('amountInput').className = t==='expense'?'w-full text-3xl font-bold text-gray-800 bg-gray-50 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-gray-900 transition placeholder-gray-300':'w-full text-3xl font-bold text-green-600 bg-gray-50 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-green-600 transition placeholder-gray-300';
             renderCategoryGrid();
         }
         function renderCategoryGrid() {
             const cats = appData.categories; if(!selectedCatId && cats.length) selectedCatId=cats[0].id;
-            document.getElementById('categoryGrid').innerHTML = cats.map(c=>`<button onclick="selectedCatId='${c.id}';renderCategoryGrid()" class="flex flex-col items-center justify-center p-2 rounded-xl border ${selectedCatId===c.id?'bg-gray-800 text-white border-gray-800 scale-105 shadow-md':'bg-white text-gray-500 border-transparent hover:bg-gray-50'}"><span class="text-xl mb-1">${c.icon}</span><span class="text-[10px] font-medium truncate w-full text-center">${c.name}</span></button>`).join('');
+            document.getElementById('categoryGrid').innerHTML = cats.map(c=>`<button onclick="selectedCatId='${c.id}';renderCategoryGrid()" class="flex flex-col items-center justify-center p-2 rounded-xl border ${selectedCatId===c.id?'bg-gray-800 text-white border-gray-800 scale-105 shadow-md':'bg-white text-gray-500 border-transparent hover:bg-gray-50'} transition-all"><span class="text-xl mb-1">${c.icon}</span><span class="text-[10px] font-medium truncate w-full text-center">${c.name}</span></button>`).join('');
         }
         function addTransaction() {
+            if(appData.accounts.length === 0) return alert('請先建立一個帳戶！');
             const amt = parseInt(document.getElementById('amountInput').value), note = document.getElementById('noteInput').value;
             if(!amt) return alert('輸入金額');
+            
+            // Logic update: Allow adding expense even if balance < 0. No checks here.
             appData.transactions.unshift({ id: Date.now(), amount: amt, type: currentTransType, categoryId: selectedCatId, accountId: document.getElementById('accountSelect').value, note: note, date: new Date().toISOString() });
+            
             saveData(); document.getElementById('amountInput').value=''; document.getElementById('noteInput').value='';
             refreshUI(); setTimeout(()=>checkGoals(true),300);
         }
         function renderTransactions() {
             const list = document.getElementById('transactionList');
-            if(!appData.transactions.length) return list.innerHTML = `<div class="text-center py-10 opacity-50"><p class="text-4xl mb-2">🍃</p><p class="text-sm">尚無紀錄</p></div>`;
-            list.innerHTML = appData.transactions.slice(0,20).map(t=>{
+            if(!appData.transactions.length) return list.innerHTML = `<div class="text-center py-12 opacity-50"><p class="text-5xl mb-3 grayscale">🍃</p><p class="text-sm font-bold text-gray-400">尚無紀錄，開始記帳吧！</p></div>`;
+            list.innerHTML = appData.transactions.slice(0,30).map(t=>{
                 const c = appData.categories.find(x=>x.id===t.categoryId)||{icon:'?',name:'未知',bucket:'living'};
-                const a = appData.accounts.find(x=>x.id===t.accountId)||{name:'?'};
+                const a = appData.accounts.find(x=>x.id===t.accountId)||{name:'未知帳戶'};
                 const d = new Date(t.date);
-                return `<div class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-gray-50 mb-2"><div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-lg shrink-0">${c.icon}</div><div class="min-w-0"><p class="font-bold text-gray-800 text-sm truncate">${t.note||c.name}</p><div class="flex items-center gap-2 text-xs text-gray-400"><span>${d.getMonth()+1}/${d.getDate()}</span><span class="bg-gray-100 px-1 rounded">${a.name}</span><span class="bg-blue-50 text-blue-400 px-1 rounded">${c.bucket}</span></div></div></div><div class="flex items-center gap-2 shrink-0"><span class="font-bold text-lg ${t.type==='expense'?'text-gray-900':'text-green-600'}">${t.type==='expense'?'-':'+'}$${t.amount}</span><button onclick="deleteTrans(${t.id})" class="text-gray-300 hover:text-red-500 px-2 font-bold">×</button></div></div>`;
+                return `<div class="flex items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-gray-50 hover:border-gray-200 transition group"><div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-lg shrink-0 border border-gray-100">${c.icon}</div><div class="min-w-0"><p class="font-bold text-gray-800 text-sm truncate">${t.note||c.name}</p><div class="flex items-center gap-2 text-xs text-gray-400"><span>${d.getMonth()+1}/${d.getDate()}</span><span class="bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">${a.name}</span><span class="bg-blue-50 text-blue-400 px-1.5 py-0.5 rounded">${c.bucket}</span></div></div></div><div class="flex items-center gap-2 shrink-0"><span class="font-bold text-lg ${t.type==='expense'?'text-gray-900':'text-green-600'}">${t.type==='expense'?'-':'+'}$${t.amount}</span><button onclick="deleteTrans(${t.id})" class="text-gray-300 hover:text-red-500 px-2 font-bold opacity-0 group-hover:opacity-100 transition text-xl">×</button></div></div>`;
             }).join('');
         }
-        function deleteTrans(id) { if(confirm('刪除？')) { appData.transactions = appData.transactions.filter(t=>t.id!==id); saveData(); refreshUI(); checkGoals(false); } }
+        function deleteTrans(id) { if(confirm('刪除這筆紀錄？')) { appData.transactions = appData.transactions.filter(t=>t.id!==id); saveData(); refreshUI(); checkGoals(false); } }
 
         // --- Waterfall Goal Logic ---
         function openGoalModal() { document.getElementById('goalModal').classList.remove('hidden'); }
@@ -474,14 +585,15 @@
             saveData(); refreshUI();
         }
 
-        // Waterfall Render
         function renderGoalList() {
             const container = document.getElementById('goalsContainer');
-            if(!appData.goals.length) return container.innerHTML = '<div class="text-center text-gray-400 py-10">尚無目標，快去設定吧！</div>';
+            if(!appData.goals.length) return container.innerHTML = '<div class="text-center text-gray-400 py-12"><p class="text-5xl mb-3">🎯</p><p class="text-sm font-bold">還沒有目標，快去設定吧！</p></div>';
 
             const accountFunds = {};
             appData.accounts.forEach(a => {
-                accountFunds[a.id] = Math.floor(getAccountBalance(a.id) * (appData.allocation.entertainment / 100));
+                const bal = getAccountBalance(a.id);
+                // V15 Logic: Ensure funds are capped at 0. If balance is negative, goal funds = 0.
+                accountFunds[a.id] = Math.max(0, Math.floor(bal * (appData.allocation.entertainment / 100)));
             });
 
             let html = '';
@@ -491,42 +603,47 @@
                 let currentAvailable = 0;
                 let pool = accountFunds[g.accountId] || 0;
                 
+                let actionButtons = '';
+                if (!g.completed) {
+                    if(idx > 0) actionButtons += `<button onclick="moveGoal(${idx}, -1)" class="text-gray-400 hover:text-black p-1.5 border rounded-lg bg-gray-50 hover:bg-white transition">⬆️</button>`;
+                    if(idx < appData.goals.length-1) actionButtons += `<button onclick="moveGoal(${idx}, 1)" class="text-gray-400 hover:text-black p-1.5 border rounded-lg bg-gray-50 hover:bg-white transition ml-1">⬇️</button>`;
+                }
+                actionButtons += `<button onclick="deleteGoal('${g.id}')" class="text-red-300 hover:text-red-500 ml-2 p-1.5 font-bold transition">×</button>`;
+
                 if (g.completed) {
                     if (pool >= g.target) accountFunds[g.accountId] -= g.target;
                     progress = 100;
-                    statusLabel = '<span class="text-[10px] bg-yellow-100 text-yellow-600 px-2 py-1 rounded font-bold">🎉 已完成</span>';
+                    statusLabel = '<span class="text-[10px] bg-yellow-100 text-yellow-600 px-2 py-1 rounded-full font-bold border border-yellow-200">🎉 已完成</span>';
                 } else {
                     currentAvailable = Math.min(pool, g.target);
                     if (currentAvailable >= g.target) {
                         progress = 100;
-                        statusLabel = '<span class="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded font-bold">✨ 優先存錢</span>';
+                        statusLabel = '<span class="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded-full font-bold border border-green-200">✨ 優先存錢</span>';
                     } else if (currentAvailable > 0) {
                         progress = (currentAvailable / g.target) * 100;
-                        statusLabel = '<span class="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-1 rounded font-bold">💰 存錢中</span>';
+                        statusLabel = '<span class="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full font-bold border border-indigo-200">💰 存錢中</span>';
                     } else {
                         progress = 0;
-                        statusLabel = '<span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded font-bold">⏳ 排隊中</span>';
+                        statusLabel = '<span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-bold border border-gray-200">⏳ 排隊中</span>';
                     }
                     accountFunds[g.accountId] -= currentAvailable;
                 }
 
                 html += `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden mb-3 transition-all ${g.completed ? 'goal-completed' : ''}">
-                    <div class="flex justify-between items-start mb-2">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden mb-3 transition-all ${g.completed ? 'goal-completed shadow-md' : 'hover:border-indigo-100'}">
+                    <div class="flex justify-between items-start mb-3">
                         <div>
                             <div class="flex items-center gap-2 mb-1">
                                 <h3 class="font-bold text-gray-800 text-lg">${g.name}</h3>
                                 ${statusLabel}
                             </div>
-                            <p class="text-xs text-gray-400">目標: $${g.target.toLocaleString()}</p>
+                            <p class="text-xs text-gray-400 font-bold">目標: $${g.target.toLocaleString()}</p>
                         </div>
-                        <div class="flex gap-1">
-                            ${idx > 0 ? `<button onclick="moveGoal(${idx}, -1)" class="text-gray-400 hover:text-black p-1 border rounded bg-gray-50">⬆️</button>` : ''}
-                            ${idx < appData.goals.length-1 ? `<button onclick="moveGoal(${idx}, 1)" class="text-gray-400 hover:text-black p-1 border rounded bg-gray-50">⬇️</button>` : ''}
-                            <button onclick="deleteGoal('${g.id}')" class="text-red-300 hover:text-red-500 ml-1 p-1 font-bold">×</button>
+                        <div class="flex items-center">
+                            ${actionButtons}
                         </div>
                     </div>
-                    <div class="w-full bg-gray-100 rounded-full h-3 mb-1 overflow-hidden">
+                    <div class="w-full bg-gray-100 rounded-full h-3 mb-2 overflow-hidden shadow-inner">
                         <div class="${g.completed ? 'bg-yellow-400' : 'bg-indigo-500'} h-3 rounded-full transition-all duration-1000 ease-out" style="width: ${progress}%"></div>
                     </div>
                     <div class="flex justify-between text-xs font-bold text-gray-500">
@@ -540,7 +657,10 @@
         function checkGoals(canFire) {
             let newSuccess = false;
             const accountFunds = {};
-            appData.accounts.forEach(a => { accountFunds[a.id] = Math.floor(getAccountBalance(a.id) * (appData.allocation.entertainment / 100)); });
+            appData.accounts.forEach(a => { 
+                const bal = getAccountBalance(a.id);
+                accountFunds[a.id] = Math.max(0, Math.floor(bal * (appData.allocation.entertainment / 100))); 
+            });
             appData.goals.forEach(g => {
                 let pool = accountFunds[g.accountId] || 0;
                 if (g.completed) { if (pool >= g.target) accountFunds[g.accountId] -= g.target; }
@@ -555,32 +675,37 @@
         }
 
         // Stats with Historical Data
-        function switchTab(id) { document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.nav-item').forEach(b=>b.className=b.dataset.target===id?'nav-item flex flex-col items-center justify-center w-full h-full text-gray-900':'nav-item flex flex-col items-center justify-center w-full h-full text-gray-400'); if(id==='view-stats') updateCharts(); }
+        function switchTab(id) { 
+            document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); 
+            document.getElementById(id).classList.add('active'); 
+            
+            document.querySelectorAll('.nav-item').forEach(b=>{
+                if(b.dataset.target===id) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            
+            if(id==='view-stats') updateCharts(); 
+        }
         
         function changeStatPeriod(p) { 
             statPeriod=p; 
-            document.querySelectorAll('.stat-period-btn').forEach(b=>b.className='flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn text-gray-500 hover:bg-gray-100'); 
-            
-            // Handle Year Button styling specifically to include the selector visual
+            document.querySelectorAll('.stat-period-btn').forEach(b=>b.className='flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn text-gray-500 hover:bg-gray-50'); 
+            document.getElementById('yearBtnText').innerText = "年度"; 
+
             if (p === 'year') {
-                document.getElementById('btn-year').className='w-full py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn bg-gray-900 text-white shadow';
-                document.getElementById('yearSelect').classList.remove('hidden'); // Enable dropdown click
-                document.getElementById('currentYearLabel').classList.remove('hidden');
-                document.getElementById('currentYearLabel').innerText = selectedStatYear + ' ▼'; // Show selected year
+                document.getElementById('btn-year').className='w-full py-2 text-xs font-bold rounded-xl transition-all stat-period-btn bg-gray-900 text-white shadow-md flex justify-center items-center gap-1';
+                document.getElementById('yearSelect').classList.remove('hidden');
+                document.getElementById('yearBtnText').innerText = selectedStatYear + ' ▼'; 
             } else {
-                document.getElementById('btn-'+p).className='flex-1 py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn bg-gray-900 text-white shadow';
+                document.getElementById('btn-'+p).className='flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn bg-gray-900 text-white shadow-md';
                 document.getElementById('yearSelect').classList.add('hidden');
-                document.getElementById('currentYearLabel').classList.add('hidden');
-                // Reset year button style when inactive
-                document.getElementById('btn-year').className = 'w-full py-1.5 text-xs font-bold rounded-lg transition-all stat-period-btn text-gray-500 hover:bg-gray-100';
             }
             updateCharts(); 
         }
         
-        function toggleChartType(t) { chartType=t; document.getElementById('chartTypeExp').className=`text-sm font-bold pb-1 border-b-2 transition-all ${t==='expense'?'border-gray-900':'border-transparent text-gray-400'}`; document.getElementById('chartTypeInc').className=`text-sm font-bold pb-1 border-b-2 transition-all ${t==='income'?'border-gray-900':'border-transparent text-gray-400'}`; updateCharts(); }
+        function toggleChartType(t) { chartType=t; document.getElementById('chartTypeExp').className=`text-sm font-bold pb-2 border-b-2 transition-all ${t==='expense'?'border-gray-900':'border-transparent text-gray-400'}`; document.getElementById('chartTypeInc').className=`text-sm font-bold pb-2 border-b-2 transition-all ${t==='income'?'border-gray-900':'border-transparent text-gray-400'}`; updateCharts(); }
         
         function updateCharts() {
-            // 1. Populate Year Selector dynamically
             const years = new Set([new Date().getFullYear()]);
             appData.transactions.forEach(t => years.add(new Date(t.date).getFullYear()));
             const sortedYears = Array.from(years).sort((a,b) => b-a);
@@ -589,43 +714,34 @@
             if (yearSelect.options.length !== sortedYears.length) {
                 yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}" ${y===selectedStatYear?'selected':''}>${y}年</option>`).join('');
             }
-            // Update selected year from dropdown if changed
             if (statPeriod === 'year') {
                 selectedStatYear = parseInt(yearSelect.value);
-                document.getElementById('currentYearLabel').innerText = selectedStatYear + ' ▼';
+                document.getElementById('yearBtnText').innerText = selectedStatYear + ' ▼';
             }
 
             const now=new Date();
             let label = "";
-
             const filtered=appData.transactions.filter(t=>{ 
                 const d=new Date(t.date); 
-                if(statPeriod==='week') {
-                    label = "最近 7 天";
-                    return d>=new Date(now.getFullYear(),now.getMonth(),now.getDate()-7); 
-                }
-                if(statPeriod==='month') {
-                    label = "本月";
-                    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
-                } 
-                if(statPeriod==='year') {
-                    label = `${selectedStatYear} 年度`;
-                    return d.getFullYear()===selectedStatYear;
-                }
+                if(statPeriod==='week') { label = "最近 7 天"; return d>=new Date(now.getFullYear(),now.getMonth(),now.getDate()-7); }
+                if(statPeriod==='month') { label = "本月"; return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear(); } 
+                if(statPeriod==='year') { label = `${selectedStatYear} 年度`; return d.getFullYear()===selectedStatYear; }
                 return false;
             });
 
             document.getElementById('chartRangeLabel').innerText = label;
 
             const target=filtered.filter(t=>t.type===chartType), catMap={}; target.forEach(t=>{ const n=appData.categories.find(c=>c.id===t.categoryId)?.name||'未知'; catMap[n]=(catMap[n]||0)+t.amount; });
-            const labels=Object.keys(catMap), data=Object.values(catMap), colors=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6'];
-            document.getElementById('noChartData').className = data.length?'hidden':'absolute inset-0 flex items-center justify-center bg-white/80 text-gray-400 text-sm';
+            const labels=Object.keys(catMap), data=Object.values(catMap), colors=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#6366F1'];
+            
+            document.getElementById('noChartData').className = data.length?'hidden':'absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10';
+
             const ctx=document.getElementById('categoryChart').getContext('2d'); if(myChart) myChart.destroy();
-            myChart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:data.length?data:[1],backgroundColor:data.length?colors:['transparent'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{display:false}},cutout:'70%'}});
-            const total=data.reduce((a,b)=>a+b,0); document.getElementById('categoryLegend').innerHTML=labels.map((l,i)=>`<div class="flex justify-between text-xs items-center p-1 hover:bg-gray-50 rounded"><span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" style="background:${colors[i%colors.length]}"></span>${l}</span><span class="font-bold">$${catMap[l]} <span class="text-gray-400 font-normal">(${total?Math.round(catMap[l]/total*100):0}%)</span></span></div>`).join('');
+            myChart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:data.length?data:[1],backgroundColor:data.length?colors:['transparent'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{display:false}},cutout:'70%', animation: { animateScale: true, animateRotate: true }}});
+            const total=data.reduce((a,b)=>a+b,0); document.getElementById('categoryLegend').innerHTML=labels.map((l,i)=>`<div class="flex justify-between text-xs items-center p-2 hover:bg-gray-50 rounded-lg transition"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background:${colors[i%colors.length]}"></span><span class="font-bold text-gray-700">${l}</span></span><span class="font-bold">$${catMap[l].toLocaleString()} <span class="text-gray-400 font-normal ml-1">(${total?Math.round(catMap[l]/total*100):0}%)</span></span></div>`).join('');
             
             const exp=filtered.filter(t=>t.type==='expense'), bucks={living:0,savings:0,investment:0,entertainment:0}; exp.forEach(t=>{const c=appData.categories.find(x=>x.id===t.categoryId); if(c) bucks[c.bucket]+=t.amount;});
-            document.getElementById('bucketAnalysis').innerHTML = Object.entries({living:'🏠 生活',savings:'💰 儲蓄',investment:'📈 投資',entertainment:'🎮 娛樂'}).map(([k,n])=>`<div class="flex justify-between items-center text-xs mb-1"><span class="text-gray-600 font-medium">${n}</span><span class="font-bold">$${bucks[k].toLocaleString()}</span></div><div class="w-full bg-gray-100 rounded-full h-1.5 mb-3"><div class="${k==='living'?'bg-blue-500':k==='savings'?'bg-green-500':k==='investment'?'bg-yellow-500':'bg-purple-500'} h-1.5 rounded-full" style="width:${bucks[k]>0?'100%':'0%'}"></div></div>`).join('');
+            document.getElementById('bucketAnalysis').innerHTML = Object.entries({living:'🏠 生活',savings:'💰 儲蓄',investment:'📈 投資',entertainment:'🎮 娛樂'}).map(([k,n])=>`<div class="flex justify-between items-center text-xs mb-1.5"><span class="text-gray-600 font-bold">${n}</span><span class="font-bold">$${bucks[k].toLocaleString()}</span></div><div class="w-full bg-gray-100 rounded-full h-2 mb-4 overflow-hidden"><div class="${k==='living'?'bg-blue-500':k==='savings'?'bg-green-500':k==='investment'?'bg-yellow-500':'bg-purple-500'} h-2 rounded-full transition-all duration-1000" style="width:${bucks[k]>0?'100%':'0%'}"></div></div>`).join('');
         }
     </script>
 </body>
