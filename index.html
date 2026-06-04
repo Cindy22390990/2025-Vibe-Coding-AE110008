@@ -3,748 +3,1166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>極簡記帳 V15 - 負數餘額支援版</title>
-    <!-- Tailwind CSS -->
+    <title>人生財務儀表板 V16</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Chart.js 圖表庫 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Canvas Confetti 煙火特效庫 -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <style>
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #F3F4F6; touch-action: manipulation; }
+        :root {
+            --bg: #0f0f13;
+            --surface: #17171e;
+            --surface2: #1e1e28;
+            --border: #2a2a38;
+            --accent: #6ee7b7;
+            --accent2: #818cf8;
+            --accent3: #fbbf24;
+            --danger: #f87171;
+            --text: #e2e8f0;
+            --muted: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            touch-action: manipulation;
+            overscroll-behavior: none;
+        }
+        .mono { font-family: 'DM Mono', monospace; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        /* 分頁與 Modal 動畫 */
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.25s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .modal { transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out; }
-        .modal.hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
-        .modal:not(.hidden) { opacity: 1; pointer-events: auto; transform: scale(1); }
-        /* 目標達成特效 */
-        .goal-completed { border: 2px solid #F59E0B; background: linear-gradient(to bottom right, #ffffff, #fffbeb); }
+        .tab-content.active { display: block; animation: fadeUp 0.3s cubic-bezier(0.22,1,0.36,1); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Card styles */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; }
+        .card-inner { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; }
+        
+        /* Glow effects */
+        .glow-green { box-shadow: 0 0 20px rgba(110,231,183,0.15); }
+        .glow-purple { box-shadow: 0 0 20px rgba(129,140,248,0.15); }
+        
+        /* Progress bar */
+        .progress-track { background: #1e1e28; border-radius: 99px; overflow: hidden; }
+        .progress-fill { border-radius: 99px; transition: width 1s cubic-bezier(0.22,1,0.36,1); }
+        
+        /* Modal */
+        .modal-overlay { background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); }
+        .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; }
+        .hidden { display: none !important; }
+        
+        /* Input styles */
+        .inp {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            width: 100%;
+            outline: none;
+            font-family: 'Noto Sans TC', sans-serif;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .inp:focus { border-color: var(--accent); }
+        .inp::placeholder { color: var(--muted); }
+        
+        /* Nav */
+        .nav-btn.active .nav-icon { background: var(--accent); color: #0f0f13; }
+        .nav-btn.active .nav-label { color: var(--accent); }
+        
+        /* Prediction line */
+        .pred-line { position: relative; }
+        .pred-line::before { content: ''; position: absolute; left: 16px; top: 24px; bottom: 0; width: 1px; background: var(--border); }
+        
+        /* Responsibility item */
+        .resp-item { transition: all 0.2s; }
+        .resp-item:hover { background: var(--surface2); }
+        
+        /* Shimmer for loading */
+        @keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        .shimmer { animation: shimmer 2s infinite; }
+        
+        /* Scroll indicator for number */
+        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .count-anim { animation: countUp 0.5s ease-out; }
+        
+        /* Badge */
+        .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+
+        /* Bottom safe area */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+        /* Segment control */
+        .seg-active { background: var(--accent); color: #0f0f13; border-radius: 8px; }
+
+        select option { background: var(--surface2); }
+        
+        /* Survival meter */
+        .survival-ok { color: var(--accent); }
+        .survival-warn { color: var(--accent3); }
+        .survival-danger { color: var(--danger); }
+
+        .tag { font-size: 10px; padding: 2px 7px; border-radius: 6px; font-weight: 700; letter-spacing: 0.03em; }
     </style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col max-w-md mx-auto bg-white shadow-2xl overflow-hidden relative">
+<body class="h-screen flex flex-col max-w-md mx-auto overflow-hidden relative">
 
-    <!-- 1. 頂部總覽區塊 -->
-    <header class="bg-gray-900 text-white p-5 rounded-b-3xl shadow-lg z-20 shrink-0">
-        <div class="flex justify-between items-center mb-4">
-            <h1 class="text-lg font-bold tracking-wide flex items-center gap-2">
-                <span>💰</span> 我的財務管家
-            </h1>
-            <button onclick="openSettings()" class="text-2xl p-2 hover:bg-gray-800 rounded-full transition duration-300 active:scale-90 active:rotate-90">⚙️</button>
+    <!-- ═══ HEADER ═══ -->
+    <header class="shrink-0 px-5 pt-6 pb-4" style="background: linear-gradient(180deg, #0f0f13 0%, #0f0f13 100%); border-bottom: 1px solid var(--border);">
+        <div class="flex justify-between items-center mb-5">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest mb-0.5" style="color: var(--muted);">人生財務儀表板</p>
+                <h1 class="text-lg font-black text-white">Life Finance <span style="color: var(--accent);">v16</span></h1>
+            </div>
+            <button onclick="openSettings()" class="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90" style="background: var(--surface); border: 1px solid var(--border);">
+                <span class="text-base">⚙️</span>
+            </button>
         </div>
-        <div class="text-center mb-2">
-            <p class="text-gray-400 text-xs mb-1 uppercase tracking-widest">Net Worth (總資產)</p>
-            <div class="text-4xl font-bold text-white tracking-wider">
-                $<span id="totalAssets">0</span>
+
+        <!-- Net Worth -->
+        <div class="card p-4 mb-3 glow-green">
+            <div class="flex justify-between items-start mb-1">
+                <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--muted);">總資產 Net Worth</span>
+                <span id="healthBadge" class="badge" style="background: rgba(110,231,183,0.15); color: var(--accent);">健康 ✦</span>
+            </div>
+            <div class="mono text-3xl font-bold text-white" id="totalAssetsHeader">$0</div>
+            <!-- Allocation pills -->
+            <div class="flex gap-1.5 mt-3 flex-wrap">
+                <span class="tag" style="background:rgba(110,231,183,0.1);color:var(--accent)">生活 <span id="hAllocLiving">0</span>%</span>
+                <span class="tag" style="background:rgba(129,140,248,0.1);color:var(--accent2)">儲蓄 <span id="hAllocSavings">0</span>%</span>
+                <span class="tag" style="background:rgba(251,191,36,0.1);color:var(--accent3)">投資 <span id="hAllocInvest">0</span>%</span>
+                <span class="tag" style="background:rgba(248,113,113,0.1);color:var(--danger)">娛樂 <span id="hAllocEnt">0</span>%</span>
             </div>
         </div>
-        <!-- 顯示目前的分配比例 -->
-        <div class="flex justify-center gap-2 text-[10px] text-gray-400 bg-gray-800/50 p-2 rounded-xl backdrop-blur-sm mx-4 border border-gray-700">
-            <div class="flex flex-col items-center px-2 border-r border-gray-600">
-                <span class="text-blue-300 font-bold mb-0.5" id="allocLiving">0%</span>
-                <span>生活</span>
+
+        <!-- Survival Mode Bar -->
+        <div class="card-inner p-3 flex items-center gap-3" id="survivalBar">
+            <div class="text-xl shrink-0">⚡</div>
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-bold text-white">發薪日生存模式</span>
+                    <span class="mono text-xs font-bold" id="survivalDaysLeft" style="color: var(--accent);">— 天</span>
+                </div>
+                <div class="progress-track h-1.5">
+                    <div class="progress-fill h-1.5" id="survivalFill" style="background: var(--accent); width: 0%;"></div>
+                </div>
             </div>
-            <div class="flex flex-col items-center px-2 border-r border-gray-600">
-                <span class="text-green-300 font-bold mb-0.5" id="allocSavings">0%</span>
-                <span>儲蓄</span>
-            </div>
-            <div class="flex flex-col items-center px-2 border-r border-gray-600">
-                <span class="text-yellow-300 font-bold mb-0.5" id="allocInvest">0%</span>
-                <span>投資</span>
-            </div>
-            <div class="flex flex-col items-center px-2">
-                <span class="text-purple-300 font-bold mb-0.5" id="allocEnt">0%</span>
-                <span>娛樂</span>
+            <div class="text-right shrink-0">
+                <div class="mono text-sm font-bold" id="survivalDaily" style="color: var(--accent);">$—</div>
+                <div class="text-[10px]" style="color: var(--muted);">每日可用</div>
             </div>
         </div>
     </header>
 
-    <!-- 2. 主要內容區 (可切換分頁) -->
-    <main class="flex-1 overflow-hidden relative bg-gray-50">
-        
-        <!-- === 分頁 1: 記帳 (Home) === -->
-        <div id="view-home" class="tab-content active h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-5">
-            
-            <!-- 帳戶概覽 -->
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="flex-1 overflow-hidden relative" style="background: var(--bg);">
+
+        <!-- ── TAB 1: 記帳 ── -->
+        <div id="view-home" class="tab-content active h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-24 space-y-4">
+
+            <!-- Accounts -->
             <div>
-                <div class="flex justify-between items-end mb-2 px-1">
-                    <h2 class="text-sm font-bold text-gray-500 uppercase">我的帳戶</h2>
-                    <button onclick="openAccountModal()" class="text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm active:scale-95 transition hover:bg-blue-100">＋ 管理</button>
+                <div class="flex justify-between items-center mb-2.5">
+                    <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--muted);">我的帳戶</span>
+                    <button onclick="openAccountModal()" class="text-xs font-bold px-3 py-1.5 rounded-full transition active:scale-95" style="background: var(--surface); border: 1px solid var(--border); color: var(--accent);">＋ 管理</button>
                 </div>
-                <div class="flex overflow-x-auto space-x-3 pb-2 no-scrollbar" id="accountListContainer"></div>
+                <div class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1" id="accountListContainer"></div>
             </div>
 
-            <!-- 輸入卡片 -->
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
-                <!-- 收支切換 -->
-                <div class="flex bg-gray-100 p-1 rounded-2xl mb-5 relative">
-                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300 rounded-xl" id="btnExpense" onclick="setTransactionType('expense')">支出</div>
-                    <div class="w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300 rounded-xl" id="btnIncome" onclick="setTransactionType('income')">收入</div>
-                    <div class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-xl shadow-sm transition-all duration-300 left-1" id="toggleBg"></div>
+            <!-- Input card -->
+            <div class="card p-4">
+                <!-- Type toggle -->
+                <div class="flex p-1 rounded-xl mb-4" style="background: var(--surface2);">
+                    <button onclick="setTxType('expense')" id="btnExp" class="flex-1 py-2 text-sm font-bold rounded-lg transition" style="background: var(--accent); color: #0f0f13;">支出</button>
+                    <button onclick="setTxType('income')" id="btnInc" class="flex-1 py-2 text-sm font-bold rounded-lg transition" style="color: var(--muted);">收入</button>
                 </div>
 
-                <!-- 帳戶選擇 -->
-                <div class="mb-3">
-                    <select id="accountSelect" class="w-full bg-gray-50 border-0 text-gray-800 text-sm font-bold py-3 px-4 rounded-xl outline-none focus:ring-2 focus:ring-gray-200 transition"></select>
+                <div class="space-y-3 mb-4">
+                    <select id="accountSelect" class="inp text-sm font-bold"></select>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 mono font-bold" style="color: var(--muted);">$</span>
+                        <input id="amountInput" type="number" placeholder="0" class="inp mono text-2xl font-bold pl-9" style="color: var(--text);">
+                    </div>
+                    <input id="noteInput" type="text" placeholder="備註（午餐、薪水…）" class="inp text-sm">
                 </div>
 
-                <!-- 金額 -->
-                <div class="mb-5 relative group">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-gray-800 transition">$</span>
-                    <input type="number" id="amountInput" placeholder="0" class="w-full text-3xl font-bold text-gray-800 bg-gray-50 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-gray-900 transition placeholder-gray-300">
+                <!-- Category grid -->
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--muted);">分類</span>
+                    <button onclick="openCategoryManager()" class="text-[10px] font-bold px-2 py-1 rounded-lg transition" style="color: var(--muted); background: var(--surface2);">編輯 ⚙</button>
                 </div>
+                <div id="categoryGrid" class="grid grid-cols-5 gap-2 mb-4"></div>
 
-                <!-- 備註 -->
-                <div class="mb-5">
-                     <input type="text" id="noteInput" placeholder="備註 (例如: 午餐、薪水)" class="w-full text-sm text-gray-600 bg-gray-50 rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-gray-200 transition">
-                </div>
-
-                <!-- 分類 -->
-                <div class="flex justify-between items-center mb-3 px-1">
-                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wide">選擇分類</label>
-                    <button onclick="openCategoryManager()" class="text-[10px] font-bold text-gray-500 hover:text-black bg-gray-100 px-2 py-1 rounded-lg transition">編輯分類 ⚙️</button>
-                </div>
-                <div class="grid grid-cols-5 gap-2 mb-6" id="categoryGrid"></div>
-                
-                <!-- 按鈕 -->
-                <button onclick="addTransaction()" id="addBtn" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-black flex justify-center items-center gap-2">
+                <button onclick="addTransaction()" id="addBtn" class="w-full py-3.5 rounded-2xl font-black text-sm transition active:scale-95 flex items-center justify-center gap-2" style="background: var(--accent); color: #0f0f13;">
                     <span>＋</span> <span id="addBtnText">新增支出</span>
                 </button>
             </div>
 
-            <!-- 列表 -->
+            <!-- Recent transactions -->
             <div>
-                <h2 class="text-lg font-bold text-gray-800 mb-3 px-1">最近紀錄</h2>
-                <div id="transactionList" class="space-y-3 pb-24 min-h-[100px]"></div>
+                <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--muted);">最近紀錄</span>
+                <div id="transactionList" class="mt-2.5 space-y-2"></div>
             </div>
         </div>
 
-        <!-- === 分頁 2: 報表 (Stats) === -->
-        <div id="view-stats" class="tab-content h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-6">
-            
-            <!-- 時間篩選 -->
-            <div class="flex gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm items-center">
-                <button onclick="changeStatPeriod('week')" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn bg-gray-900 text-white shadow-md" id="btn-week">本週</button>
-                <button onclick="changeStatPeriod('month')" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn text-gray-500 hover:bg-gray-50" id="btn-month">本月</button>
-                <div class="flex-1 relative group">
-                    <button onclick="changeStatPeriod('year')" class="w-full py-2 text-xs font-bold rounded-xl transition-all stat-period-btn text-gray-500 hover:bg-gray-50 flex justify-center items-center gap-1" id="btn-year">
-                        <span id="yearBtnText">年度</span>
-                    </button>
-                    <!-- 年份選擇器 -->
-                    <select id="yearSelect" onchange="updateCharts()" class="hidden absolute inset-0 opacity-0 w-full h-full cursor-pointer"></select>
-                </div>
-            </div>
-            
-            <!-- 收支切換 -->
-            <div class="flex justify-center gap-8 border-b border-gray-200 pb-1">
-                 <button onclick="toggleChartType('expense')" id="chartTypeExp" class="text-sm font-bold border-b-2 border-gray-900 pb-2 px-2 transition-all">支出分析</button>
-                 <button onclick="toggleChartType('income')" id="chartTypeInc" class="text-sm font-bold text-gray-400 pb-2 border-b-2 border-transparent px-2 hover:text-gray-600 transition-all">收入分析</button>
+        <!-- ── TAB 2: 責任 (Responsibilities) ── -->
+        <div id="view-resp" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-24 space-y-4">
+
+            <!-- Summary card -->
+            <div class="card p-4 glow-purple">
+                <p class="text-xs font-bold uppercase tracking-widest mb-1" style="color: var(--muted);">本月固定責任</p>
+                <div class="mono text-3xl font-bold" id="respTotalMonthly" style="color: var(--accent2);">$0</div>
+                <p class="text-xs mt-1" style="color: var(--muted);">佔可支配收入 <span id="respPct" class="font-bold" style="color: var(--text);">—%</span></p>
             </div>
 
-            <!-- 圓餅圖 -->
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center relative min-h-[300px] flex flex-col justify-center">
-                <h4 id="chartRangeLabel" class="absolute top-4 left-0 right-0 text-xs text-gray-400 font-bold uppercase tracking-wide">統計範圍</h4>
-                <div class="w-4/5 mx-auto mb-4">
-                    <canvas id="categoryChart"></canvas>
-                </div>
-                <div id="categoryLegend" class="mt-2 space-y-2 text-left max-h-40 overflow-y-auto custom-scrollbar"></div>
-                <div id="noChartData" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10">
-                    <span class="text-4xl mb-2">📉</span>
-                    <span class="text-gray-400 text-sm font-bold">此期間無資料</span>
+            <!-- Payday config -->
+            <div class="card p-4">
+                <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--muted);">薪資 / 發薪設定</p>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="text-xs mb-1 block" style="color: var(--muted);">每月薪資</label>
+                        <input id="cfSalary" type="number" placeholder="38000" class="inp mono font-bold" oninput="saveCashflowConfig()">
+                    </div>
+                    <div>
+                        <label class="text-xs mb-1 block" style="color: var(--muted);">發薪日 (每月幾號)</label>
+                        <input id="cfPayday" type="number" min="1" max="31" placeholder="5" class="inp mono font-bold" oninput="saveCashflowConfig()">
+                    </div>
                 </div>
             </div>
-            
-            <!-- 屬性分析 -->
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span>資金流向分析</span>
-                    <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">依分類屬性</span>
-                </h3>
-                <div id="bucketAnalysis" class="space-y-5"></div>
+
+            <!-- Responsibility list -->
+            <div>
+                <div class="flex justify-between items-center mb-2.5">
+                    <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--muted);">固定責任清單</span>
+                    <button onclick="openRespModal()" class="text-xs font-bold px-3 py-1.5 rounded-full transition active:scale-95" style="background: var(--surface); border: 1px solid var(--border); color: var(--accent2);">＋ 新增</button>
+                </div>
+                <div id="respList" class="space-y-2"></div>
             </div>
         </div>
 
-        <!-- === 分頁 3: 目標 (Goals) === -->
-        <div id="view-goals" class="tab-content h-full overflow-y-auto no-scrollbar p-4 pb-24 space-y-4">
-            <div class="flex justify-between items-center px-1">
-                <h2 class="text-lg font-bold text-gray-800">我的願望清單</h2>
-                <button onclick="openGoalModal()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition flex items-center gap-1">
-                    <span>＋</span> 新增目標
-                </button>
-            </div>
-            
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-4 rounded-2xl text-xs text-blue-800 leading-relaxed shadow-sm">
-                💡 <b>聰明存錢法：</b><br>
-                系統採用「瀑布流」邏輯。資金會優先填滿<b>第一順位</b>的目標。若帳戶為負數，將暫停累積進度。
+        <!-- ── TAB 3: 預測 (Prediction) ── -->
+        <div id="view-predict" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-24 space-y-4">
+
+            <!-- Milestone -->
+            <div class="card p-4" style="border-color: rgba(251,191,36,0.3);">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest mb-1" style="color: var(--accent3);">🏆 第一桶金倒數</p>
+                        <div class="mono text-2xl font-bold text-white" id="milestoneAmt">$100,000</div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs" style="color: var(--muted);">預計達成</p>
+                        <p class="mono text-sm font-bold" id="milestoneDate" style="color: var(--accent3);">計算中…</p>
+                    </div>
+                </div>
+                <div class="progress-track h-2 mb-1">
+                    <div class="progress-fill h-2" id="milestoneFill" style="background: var(--accent3); width: 0%;"></div>
+                </div>
+                <div class="flex justify-between text-xs font-bold">
+                    <span style="color: var(--muted);">目前 <span id="milestoneNow" class="mono" style="color: var(--text);">$0</span></span>
+                    <span id="milestonePct" style="color: var(--accent3);">0%</span>
+                </div>
             </div>
 
-            <div id="goalsContainer" class="space-y-4 pb-24 min-h-[200px]"></div>
+            <!-- Cashflow prediction -->
+            <div class="card p-4">
+                <p class="text-xs font-bold uppercase tracking-widest mb-4" style="color: var(--muted);">未來現金流預測</p>
+                <div id="predictionList" class="pred-line space-y-0"></div>
+            </div>
+
+            <!-- Monthly breakdown -->
+            <div class="card p-4">
+                <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--muted);">每月收支概覽</p>
+                <div class="space-y-3" id="cfBreakdown"></div>
+            </div>
+        </div>
+
+        <!-- ── TAB 4: 目標 (Goals) ── -->
+        <div id="view-goals" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-24 space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--muted);">人生目標</span>
+                <button onclick="openGoalModal()" class="text-xs font-bold px-3 py-1.5 rounded-full transition active:scale-95" style="background: rgba(110,231,183,0.1); border: 1px solid rgba(110,231,183,0.2); color: var(--accent);">＋ 新增目標</button>
+            </div>
+
+            <div class="card-inner p-3 text-xs leading-relaxed" style="color: var(--muted);">
+                💡 <b style="color: var(--text);">瀑布流邏輯：</b>娛樂基金優先填滿第一順位目標，帳戶負數時暫停累積。
+            </div>
+
+            <div id="goalsContainer" class="space-y-3"></div>
+        </div>
+
+        <!-- ── TAB 5: 報表 (Stats) ── -->
+        <div id="view-stats" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-24 space-y-4">
+            <!-- Period filter -->
+            <div class="flex p-1 rounded-xl" style="background: var(--surface); border: 1px solid var(--border);">
+                <button onclick="changeStatPeriod('week')" id="btn-week" class="flex-1 py-2 text-xs font-bold rounded-lg seg-active transition">本週</button>
+                <button onclick="changeStatPeriod('month')" id="btn-month" class="flex-1 py-2 text-xs font-bold rounded-lg transition" style="color: var(--muted);">本月</button>
+                <button onclick="changeStatPeriod('year')" id="btn-year" class="flex-1 py-2 text-xs font-bold rounded-lg transition" style="color: var(--muted);">年度</button>
+            </div>
+
+            <!-- Chart toggle -->
+            <div class="flex gap-4 border-b pb-1" style="border-color: var(--border);">
+                <button onclick="toggleChartType('expense')" id="chartTypeExp" class="text-sm font-bold pb-1.5 border-b-2 transition" style="border-color: var(--accent); color: var(--text);">支出分析</button>
+                <button onclick="toggleChartType('income')" id="chartTypeInc" class="text-sm font-bold pb-1.5 border-b-2 border-transparent transition" style="color: var(--muted);">收入分析</button>
+            </div>
+
+            <!-- Pie chart -->
+            <div class="card p-5 text-center relative" style="min-height: 280px;">
+                <p id="chartRangeLabel" class="text-xs font-bold uppercase tracking-widest mb-4" style="color: var(--muted);">統計範圍</p>
+                <div class="w-3/4 mx-auto mb-4"><canvas id="categoryChart"></canvas></div>
+                <div id="categoryLegend" class="space-y-1.5 text-left"></div>
+                <div id="noChartData" class="hidden absolute inset-0 flex flex-col items-center justify-center rounded-2xl" style="background: var(--surface);">
+                    <span class="text-4xl mb-2 shimmer">📊</span>
+                    <span class="text-sm font-bold" style="color: var(--muted);">此期間無資料</span>
+                </div>
+            </div>
+
+            <!-- Bucket analysis -->
+            <div class="card p-4">
+                <p class="text-xs font-bold uppercase tracking-widest mb-4" style="color: var(--muted);">資金流向分析</p>
+                <div id="bucketAnalysis" class="space-y-4"></div>
+            </div>
         </div>
     </main>
 
-    <!-- 3. 底部導航列 -->
-    <nav class="bg-white border-t border-gray-100 fixed bottom-0 w-full max-w-md pb-safe z-30 flex justify-around items-center h-20 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)] rounded-t-3xl">
-        <button onclick="switchTab('view-home')" class="nav-item group flex flex-col items-center justify-center w-full h-full text-gray-900" data-target="view-home">
-            <div class="bg-gray-100 group-[.active]:bg-gray-900 group-[.active]:text-white p-2 rounded-xl transition-all duration-300 mb-1">
-                <span class="text-xl block w-6 h-6 flex items-center justify-center">📝</span>
-            </div>
-            <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-gray-900 transition-colors">記帳</span>
-        </button>
-        <button onclick="switchTab('view-stats')" class="nav-item group flex flex-col items-center justify-center w-full h-full text-gray-400" data-target="view-stats">
-            <div class="bg-transparent group-[.active]:bg-gray-900 group-[.active]:text-white p-2 rounded-xl transition-all duration-300 mb-1">
-                <span class="text-xl block w-6 h-6 flex items-center justify-center">📊</span>
-            </div>
-            <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-gray-900 transition-colors">報表</span>
-        </button>
-        <button onclick="switchTab('view-goals')" class="nav-item group flex flex-col items-center justify-center w-full h-full text-gray-400" data-target="view-goals">
-            <div class="bg-transparent group-[.active]:bg-gray-900 group-[.active]:text-white p-2 rounded-xl transition-all duration-300 mb-1">
-                <span class="text-xl block w-6 h-6 flex items-center justify-center">🎯</span>
-            </div>
-            <span class="text-[10px] font-bold text-gray-400 group-[.active]:text-gray-900 transition-colors">目標</span>
-        </button>
+    <!-- ═══ BOTTOM NAV ═══ -->
+    <nav class="shrink-0 pb-safe" style="background: var(--surface); border-top: 1px solid var(--border);">
+        <div class="flex h-16">
+            <button onclick="switchTab('view-home')" class="nav-btn active flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-home">
+                <div class="nav-icon w-8 h-8 rounded-xl flex items-center justify-center text-base transition" style="background: var(--accent); color: #0f0f13;">📝</div>
+                <span class="nav-label text-[10px] font-bold transition" style="color: var(--accent);">記帳</span>
+            </button>
+            <button onclick="switchTab('view-resp')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-resp">
+                <div class="nav-icon w-8 h-8 rounded-xl flex items-center justify-center text-base transition" style="color: var(--muted);">📋</div>
+                <span class="nav-label text-[10px] font-bold transition" style="color: var(--muted);">責任</span>
+            </button>
+            <button onclick="switchTab('view-predict')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-predict">
+                <div class="nav-icon w-8 h-8 rounded-xl flex items-center justify-center text-base transition" style="color: var(--muted);">🔮</div>
+                <span class="nav-label text-[10px] font-bold transition" style="color: var(--muted);">預測</span>
+            </button>
+            <button onclick="switchTab('view-goals')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-goals">
+                <div class="nav-icon w-8 h-8 rounded-xl flex items-center justify-center text-base transition" style="color: var(--muted);">🎯</div>
+                <span class="nav-label text-[10px] font-bold transition" style="color: var(--muted);">目標</span>
+            </button>
+            <button onclick="switchTab('view-stats')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-stats">
+                <div class="nav-icon w-8 h-8 rounded-xl flex items-center justify-center text-base transition" style="color: var(--muted);">📊</div>
+                <span class="nav-label text-[10px] font-bold transition" style="color: var(--muted);">報表</span>
+            </button>
+        </div>
     </nav>
 
-    <!-- === Modals === -->
+    <!-- ═══ MODALS ═══ -->
 
-    <!-- 提醒通知 -->
-    <div id="reminderModal" class="modal hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl scale-100">
-            <div class="text-5xl mb-4">🔔</div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">記帳提醒</h2>
-            <p class="text-gray-500 mb-6 text-sm">今天還沒有記帳喔！花一分鐘記錄一下今天的開銷吧？</p>
-            <button onclick="document.getElementById('reminderModal').classList.add('hidden')" class="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:scale-105 transition shadow-lg">好的，馬上記！</button>
-        </div>
-    </div>
-
-    <!-- 新手導引 -->
-    <div id="onboardingModal" class="modal hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl">
-            <div class="text-6xl mb-6">👋</div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-3">歡迎使用！</h2>
-            <p class="text-gray-500 mb-8 text-sm leading-relaxed text-left bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                1. <b>設定比例</b>：點擊右上角 ⚙️ 設定生活、儲蓄等佔比。<br><br>
-                2. <b>排序目標</b>：新增目標後，調整上下順序，系統會優先幫你達成第一順位的願望！<br><br>
-                3. <b>支援負數</b>：現在支援透支記帳，帳戶餘額為負數時會以紅色顯示。
-            </p>
-            <button onclick="closeOnboarding()" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold hover:scale-105 transition shadow-xl text-lg">開始規劃 🚀</button>
-        </div>
-    </div>
-
-    <!-- 設定 Modal -->
-    <div id="settingsModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl h-4/5 flex flex-col">
-            <h3 class="text-xl font-bold text-gray-900 mb-6 text-center">偏好設定</h3>
-            
-            <div class="overflow-y-auto flex-1 custom-scrollbar pr-1 space-y-4">
-                <!-- 比例設定 -->
-                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    <p class="text-xs font-bold text-gray-500 mb-4 uppercase tracking-wide">資產分配比例 (總和 100%)</p>
+    <!-- Settings -->
+    <div id="settingsModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6 max-h-[85vh] flex flex-col">
+            <h3 class="text-lg font-black text-white text-center mb-5">⚙️ 設定</h3>
+            <div class="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-1">
+                <div class="card-inner p-4">
+                    <p class="text-xs font-bold uppercase tracking-widest mb-4" style="color: var(--muted);">資產分配 (總計 100%)</p>
                     <div class="space-y-3">
-                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-blue-600 flex items-center gap-2"><span>🏠</span> 生活</label><input type="number" id="setLiving" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-blue-500 transition shadow-sm"></div>
-                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-green-600 flex items-center gap-2"><span>💰</span> 儲蓄</label><input type="number" id="setSavings" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-green-500 transition shadow-sm"></div>
-                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-yellow-600 flex items-center gap-2"><span>📈</span> 投資</label><input type="number" id="setInvest" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-yellow-500 transition shadow-sm"></div>
-                        <div class="flex items-center justify-between"><label class="text-sm font-bold text-purple-600 flex items-center gap-2"><span>🎮</span> 娛樂</label><input type="number" id="setEnt" class="w-16 bg-white rounded-lg p-2 text-center font-bold outline-none border focus:border-purple-500 transition shadow-sm"></div>
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold" style="color: var(--accent);">🏠 生活</label>
+                            <input id="setLiving" type="number" class="inp w-20 text-center mono font-bold" oninput="updateRatioTotal()">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold" style="color: var(--accent2);">💰 儲蓄</label>
+                            <input id="setSavings" type="number" class="inp w-20 text-center mono font-bold" oninput="updateRatioTotal()">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold" style="color: var(--accent3);">📈 投資</label>
+                            <input id="setInvest" type="number" class="inp w-20 text-center mono font-bold" oninput="updateRatioTotal()">
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold" style="color: var(--danger);">🎮 娛樂</label>
+                            <input id="setEnt" type="number" class="inp w-20 text-center mono font-bold" oninput="updateRatioTotal()">
+                        </div>
+                        <div class="text-right text-xs font-bold mono" id="totalRatioDisplay">100%</div>
                     </div>
-                    <div class="text-right text-xs font-bold mt-3" id="totalRatioDisplay">總計: 100%</div>
                 </div>
-
-                <!-- 提醒設定 -->
-                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    <div class="flex justify-between items-center mb-3">
-                        <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">每日記帳提醒</p>
-                        <input type="checkbox" id="setReminderToggle" class="accent-gray-900 w-5 h-5 cursor-pointer" onchange="toggleReminderInput()">
-                    </div>
-                    <div id="reminderTimeBlock" class="hidden">
-                        <input type="time" id="setReminderTime" class="w-full bg-white border rounded-xl p-2 text-sm outline-none shadow-sm">
-                    </div>
+                <div class="card-inner p-4">
+                    <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--muted);">第一桶金目標</p>
+                    <input id="setMilestone" type="number" placeholder="100000" class="inp mono font-bold">
                 </div>
-
-                <!-- 危險區域 -->
-                <div class="mt-8 pt-4 border-t border-gray-100">
-                    <button onclick="resetAllData()" class="w-full text-red-400 text-xs font-bold hover:text-red-600 py-2 border border-transparent hover:border-red-100 rounded-xl transition">⚠️ 重置所有資料</button>
+                <div class="mt-2 pt-3" style="border-top: 1px solid var(--border);">
+                    <button onclick="resetAllData()" class="w-full text-xs font-bold py-2 rounded-xl transition" style="color: var(--danger);">⚠️ 重置所有資料</button>
                 </div>
             </div>
-
-            <div class="grid grid-cols-2 gap-3 mt-4 flex-shrink-0 pt-2 border-t border-gray-100">
-                <button onclick="closeSettings()" class="py-3 text-gray-500 font-bold rounded-xl hover:bg-gray-50 transition">取消</button>
-                <button onclick="saveSettings()" class="py-3 bg-gray-900 text-white rounded-xl font-bold shadow-lg hover:bg-black transition active:scale-95">儲存</button>
+            <div class="grid grid-cols-2 gap-3 mt-4 pt-4" style="border-top: 1px solid var(--border);">
+                <button onclick="closeSettings()" class="py-3 text-sm font-bold rounded-xl transition" style="background: var(--surface2); color: var(--muted);">取消</button>
+                <button onclick="saveSettings()" class="py-3 text-sm font-bold rounded-xl transition active:scale-95" style="background: var(--accent); color: #0f0f13;">儲存</button>
             </div>
         </div>
     </div>
 
-    <!-- 帳戶管理 Modal -->
-    <div id="accountModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-3xl p-6">
-            <h3 class="text-lg font-bold mb-6 text-center" id="accModalTitle">新增帳戶</h3>
+    <!-- Account Modal -->
+    <div id="accountModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-white text-center mb-5" id="accModalTitle">新增帳戶</h3>
             <input type="hidden" id="accId">
-            
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">帳戶名稱</label>
-                    <input type="text" id="accName" placeholder="例如: 薪轉戶" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-gray-200 transition">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">初始餘額 (可為負數)</label>
-                    <input type="number" id="accBalance" placeholder="0" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-gray-200 transition">
-                </div>
+            <div class="space-y-3 mb-5">
+                <div><label class="text-xs mb-1 block font-bold" style="color: var(--muted);">帳戶名稱</label><input id="accName" class="inp" placeholder="薪轉戶"></div>
+                <div><label class="text-xs mb-1 block font-bold" style="color: var(--muted);">初始餘額 (可為負數)</label><input id="accBalance" type="number" class="inp mono font-bold" placeholder="0"></div>
             </div>
-            
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="document.getElementById('accountModal').classList.add('hidden')" class="py-3 text-gray-500 font-bold rounded-xl hover:bg-gray-50">取消</button>
-                <button onclick="saveAccount()" class="py-3 bg-gray-900 text-white rounded-xl font-bold shadow-lg hover:bg-black active:scale-95 transition">儲存</button>
+                <button onclick="closeModal('accountModal')" class="py-3 text-sm font-bold rounded-xl" style="background: var(--surface2); color: var(--muted);">取消</button>
+                <button onclick="saveAccount()" class="py-3 text-sm font-bold rounded-xl active:scale-95 transition" style="background: var(--accent); color: #0f0f13;">儲存</button>
             </div>
-            <button onclick="deleteAccountCurrent()" id="btnDelAcc" class="w-full mt-4 text-red-400 text-xs py-2 font-bold hover:bg-red-50 rounded-xl transition hidden">刪除此帳戶</button>
+            <button onclick="deleteAccountCurrent()" id="btnDelAcc" class="hidden w-full mt-3 py-2 text-xs font-bold rounded-xl transition" style="color: var(--danger);">刪除此帳戶</button>
         </div>
     </div>
 
-    <!-- 分類管理 Modal -->
-    <div id="categoryModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-3xl p-6 h-4/5 flex flex-col">
-            <h3 class="text-lg font-bold mb-4 flex-shrink-0 text-center">管理分類</h3>
-            
-            <div class="bg-gray-50 p-4 rounded-2xl mb-4 flex-shrink-0 border border-gray-100">
-                <p class="text-xs font-bold text-gray-500 mb-3">新增分類</p>
-                <div class="grid grid-cols-5 gap-2 mb-3 h-24 overflow-y-auto border p-2 bg-white rounded-xl custom-scrollbar" id="iconPicker"></div>
-                <input type="text" id="newCatName" placeholder="分類名稱" class="w-full border border-gray-200 rounded-lg p-2 text-sm mb-2 outline-none focus:border-gray-400">
-                <select id="newCatBucket" class="w-full border border-gray-200 rounded-lg p-2 text-sm mb-2 outline-none bg-white focus:border-gray-400">
-                    <option value="living">🏠 生活 (Living)</option>
-                    <option value="entertainment">🎮 娛樂 (Fun)</option>
-                    <option value="savings">💰 儲蓄 (Saving)</option>
-                    <option value="investment">📈 投資 (Invest)</option>
+    <!-- Responsibility Modal -->
+    <div id="respModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-white text-center mb-5">新增固定責任</h3>
+            <div class="space-y-3 mb-5">
+                <div>
+                    <label class="text-xs mb-1 block font-bold" style="color: var(--muted);">責任名稱</label>
+                    <input id="respName" class="inp" placeholder="父母生活費、牙套分期…">
+                </div>
+                <div>
+                    <label class="text-xs mb-1 block font-bold" style="color: var(--muted);">每月金額</label>
+                    <input id="respMonthly" type="number" class="inp mono font-bold" placeholder="8000">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs mb-1 block font-bold" style="color: var(--muted);">開始 (年/月)</label>
+                        <input id="respStart" type="month" class="inp text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs mb-1 block font-bold" style="color: var(--muted);">結束 (空白=永久)</label>
+                        <input id="respEnd" type="month" class="inp text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs mb-1 block font-bold" style="color: var(--muted);">類型</label>
+                    <select id="respType" class="inp text-sm">
+                        <option value="family">👨‍👩‍👧 家庭支援</option>
+                        <option value="debt">💳 分期/負債</option>
+                        <option value="insurance">🛡️ 保險</option>
+                        <option value="subscription">📱 訂閱服務</option>
+                        <option value="other">📌 其他</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeModal('respModal')" class="py-3 text-sm font-bold rounded-xl" style="background: var(--surface2); color: var(--muted);">取消</button>
+                <button onclick="saveResp()" class="py-3 text-sm font-bold rounded-xl active:scale-95 transition" style="background: var(--accent2); color: #fff;">新增</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6 max-h-[85vh] flex flex-col">
+            <h3 class="text-lg font-black text-white text-center mb-4">管理分類</h3>
+            <div class="card-inner p-3 mb-4 flex-shrink-0">
+                <div class="grid grid-cols-6 gap-1.5 max-h-24 overflow-y-auto no-scrollbar mb-2" id="iconPicker"></div>
+                <input id="newCatName" class="inp text-sm mb-2" placeholder="分類名稱">
+                <select id="newCatBucket" class="inp text-sm mb-2">
+                    <option value="living">🏠 生活</option>
+                    <option value="entertainment">🎮 娛樂</option>
+                    <option value="savings">💰 儲蓄</option>
+                    <option value="investment">📈 投資</option>
                 </select>
-                <button onclick="addNewCategory()" class="w-full bg-gray-900 text-white text-xs py-2.5 rounded-lg font-bold shadow hover:bg-black transition">＋ 新增</button>
+                <button onclick="addNewCategory()" class="w-full py-2 text-xs font-bold rounded-lg transition" style="background: var(--accent); color: #0f0f13;">＋ 新增分類</button>
             </div>
-            
-            <p class="text-xs font-bold text-gray-500 mb-2 flex-shrink-0 px-1">現有分類 (點擊刪除)</p>
-            <div id="categoryListEdit" class="space-y-2 overflow-y-auto flex-1 custom-scrollbar pr-1 pb-2"></div>
-            
-            <button onclick="document.getElementById('categoryModal').classList.add('hidden')" class="w-full mt-4 py-3 border border-gray-200 rounded-2xl text-gray-600 font-bold hover:bg-gray-50 flex-shrink-0 transition">完成</button>
+            <div id="categoryListEdit" class="space-y-2 overflow-y-auto flex-1 no-scrollbar"></div>
+            <button onclick="closeModal('categoryModal')" class="w-full mt-4 py-3 text-sm font-bold rounded-xl flex-shrink-0 transition" style="background: var(--surface2); color: var(--muted);">完成</button>
         </div>
     </div>
 
-    <!-- 目標 Modal -->
-    <div id="goalModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-3xl p-6">
-            <h3 class="text-lg font-bold mb-6 text-center">設定新目標</h3>
-            
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">目標名稱</label>
-                    <input type="text" id="goalName" placeholder="例: 買新手機" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-100 transition">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">目標金額</label>
-                    <input type="number" id="goalAmount" placeholder="0" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-100 transition">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 mb-1 block font-bold ml-1">使用哪個帳戶的「娛樂基金」？</label>
-                    <select id="goalAccountSelect" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none text-sm focus:ring-2 focus:ring-indigo-100 transition"></select>
-                </div>
+    <!-- Goal Modal -->
+    <div id="goalModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-white text-center mb-5">新增人生目標</h3>
+            <div class="space-y-3 mb-5">
+                <div><label class="text-xs mb-1 block font-bold" style="color: var(--muted);">目標名稱</label><input id="goalName" class="inp" placeholder="緊急預備金、買房頭期款…"></div>
+                <div><label class="text-xs mb-1 block font-bold" style="color: var(--muted);">目標金額</label><input id="goalAmount" type="number" class="inp mono font-bold" placeholder="100000"></div>
+                <div><label class="text-xs mb-1 block font-bold" style="color: var(--muted);">使用哪個帳戶的娛樂基金</label><select id="goalAccountSelect" class="inp text-sm"></select></div>
             </div>
-
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="document.getElementById('goalModal').classList.add('hidden')" class="py-3 text-gray-500 font-bold rounded-xl hover:bg-gray-50">取消</button>
-                <button onclick="saveGoal()" class="py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition">確認</button>
+                <button onclick="closeModal('goalModal')" class="py-3 text-sm font-bold rounded-xl" style="background: var(--surface2); color: var(--muted);">取消</button>
+                <button onclick="saveGoal()" class="py-3 text-sm font-bold rounded-xl active:scale-95 transition" style="background: var(--accent); color: #0f0f13;">確認</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // --- Core Data ---
-        let appData = {
-            transactions: [],
-            accounts: [{ id: 'acc_1', name: '現金錢包', initialBalance: 0 }],
-            categories: [
-                { id: 'c1', name: '早餐', icon: '🥪', bucket: 'living', type: 'expense' },
-                { id: 'c2', name: '午晚餐', icon: '🍱', bucket: 'living', type: 'expense' },
-                { id: 'c3', name: '交通', icon: '🚌', bucket: 'living', type: 'expense' },
-                { id: 'c4', name: '飲料', icon: '🥤', bucket: 'entertainment', type: 'expense' },
-                { id: 'c5', name: '遊戲', icon: '🎮', bucket: 'entertainment', type: 'expense' },
-                { id: 'c6', name: '薪水', icon: '💰', bucket: 'living', type: 'income' },
-                { id: 'c7', name: '股票', icon: '📈', bucket: 'investment', type: 'expense' },
-                { id: 'c8', name: '房租', icon: '🏠', bucket: 'living', type: 'expense' }
-            ],
-            goals: [], 
-            allocation: { living: 50, savings: 20, investment: 10, entertainment: 20 },
-            settings: { reminderEnabled: false, reminderTime: '20:00' }, 
-            isFirstTime: true
-        };
+    <!-- Onboarding -->
+    <div id="onboardingModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6">
+        <div class="modal-box w-full max-w-sm p-8 text-center">
+            <div class="text-5xl mb-4">🚀</div>
+            <h2 class="text-2xl font-black text-white mb-2">歡迎使用 V16</h2>
+            <p class="text-sm mb-6 leading-relaxed text-left card-inner p-4" style="color: var(--muted);">
+                <b style="color: var(--text);">全新升級：</b><br>
+                📋 <b style="color: var(--accent2);">責任追蹤</b>：記錄父母生活費、牙套分期等固定支出<br><br>
+                🔮 <b style="color: var(--accent);">現金流預測</b>：預測 3、6、12 個月後的存款<br><br>
+                🏆 <b style="color: var(--accent3);">第一桶金倒數</b>：設定目標，看見達成日期
+            </p>
+            <button onclick="closeOnboarding()" class="w-full py-4 rounded-2xl font-black text-base transition active:scale-95" style="background: var(--accent); color: #0f0f13;">開始規劃 →</button>
+        </div>
+    </div>
 
-        const availableIcons = ['🍔','🍱','🍜','🍣','🍎','🍺','☕','🚗','🚕','✈️','🏠','💡','📱','💊','🛍️','🎁','🎮','🎬','🐶','📚','💰','💵','🏥','🏋️','🏝️','🎤','👗','💄','🚲','⛽','🛒','💇','🧸'];
-        let myChart = null;
-        let statPeriod = 'week'; 
-        let selectedStatYear = new Date().getFullYear();
-        let chartType = 'expense';
-        let selectedIcon = availableIcons[0];
-        let currentTransType = 'expense';
-        let selectedCatId = null;
+<script>
+// ═══════════════════════════════════════
+// DATA STRUCTURE
+// ═══════════════════════════════════════
+let appData = {
+    transactions: [],
+    accounts: [{ id: 'acc_1', name: '薪轉帳戶', initialBalance: 0 }],
+    categories: [
+        { id: 'c1', name: '早餐', icon: '🥪', bucket: 'living' },
+        { id: 'c2', name: '午晚餐', icon: '🍱', bucket: 'living' },
+        { id: 'c3', name: '交通', icon: '🚌', bucket: 'living' },
+        { id: 'c4', name: '飲料', icon: '🥤', bucket: 'entertainment' },
+        { id: 'c5', name: '遊戲', icon: '🎮', bucket: 'entertainment' },
+        { id: 'c6', name: '薪水', icon: '💰', bucket: 'living' },
+        { id: 'c7', name: '股票', icon: '📈', bucket: 'investment' },
+        { id: 'c8', name: '房租', icon: '🏠', bucket: 'living' }
+    ],
+    responsibilities: [],  // NEW
+    goals: [],
+    allocation: { living: 50, savings: 20, investment: 10, entertainment: 20 },
+    cashflow: { salary: 0, payday: 5 },  // NEW
+    milestoneTarget: 100000,  // NEW
+    isFirstTime: true
+};
 
-        window.onload = () => {
-            loadData();
-            if(appData.isFirstTime) document.getElementById('onboardingModal').classList.remove('hidden');
-            checkReminder();
-            saveData();
-            refreshUI();
-            checkGoals(false); 
-        };
+const ICONS = ['🍔','🍱','🍜','🍣','🍎','🍺','☕','🚗','🚕','✈️','🏠','💡','📱','💊','🛍️','🎁','🎮','🎬','🐶','📚','💰','💵','🏥','🏋️','🏝️','🎤','👗','💄','🚲','⛽','🛒','💇','🧸','👨‍👩‍👧','🦷','🛡️','📋'];
+const BUCKET_COLORS = { living:'var(--accent)', savings:'var(--accent2)', investment:'var(--accent3)', entertainment:'var(--danger)' };
+const RESP_ICONS = { family:'👨‍👩‍👧', debt:'💳', insurance:'🛡️', subscription:'📱', other:'📌' };
 
-        function loadData() {
-            const saved = localStorage.getItem('v15_app_data'); // Updated key for V15
-            if(saved) {
-                const parsed = JSON.parse(saved);
-                appData = { ...appData, ...parsed };
-                if(!appData.settings) appData.settings = { reminderEnabled: false, reminderTime: '20:00' };
-                appData.categories.forEach(c => { if(!c.bucket) c.bucket = 'living'; });
-            }
-        }
-        function saveData() { localStorage.setItem('v15_app_data', JSON.stringify(appData)); }
+let myChart = null, statPeriod = 'week', chartType = 'expense', selectedIcon = ICONS[0], currentTxType = 'expense', selectedCatId = null;
 
-        function checkReminder() {
-            const today = new Date().toDateString();
-            if(appData.settings && appData.settings.reminderEnabled) {
-                const now = new Date();
-                const [h, m] = appData.settings.reminderTime.split(':');
-                const reminderTime = new Date(); reminderTime.setHours(h, m, 0, 0);
-                const hasTransToday = appData.transactions.some(t => new Date(t.date).toDateString() === today);
-                if(!hasTransToday && now > reminderTime && !sessionStorage.getItem('reminded_today')) {
-                     document.getElementById('reminderModal').classList.remove('hidden');
-                     sessionStorage.setItem('reminded_today', 'true');
-                }
-            }
-        }
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.onload = () => {
+    loadData();
+    if (appData.isFirstTime) document.getElementById('onboardingModal').classList.remove('hidden');
+    refreshUI();
+    checkGoals(false);
+};
 
-        function refreshUI() {
-            renderHeader(); renderAccounts(); renderCategoryGrid(); renderTransactions(); renderGoalList(); updateAccountSelects();
-            document.getElementById('setLiving').value = appData.allocation.living;
-            document.getElementById('setSavings').value = appData.allocation.savings;
-            document.getElementById('setInvest').value = appData.allocation.investment;
-            document.getElementById('setEnt').value = appData.allocation.entertainment;
-            document.getElementById('setReminderToggle').checked = appData.settings.reminderEnabled;
-            document.getElementById('setReminderTime').value = appData.settings.reminderTime;
-            toggleReminderInput();
-            updateRatioTotal();
-            if(document.getElementById('view-stats').classList.contains('active')) updateCharts();
-        }
+function loadData() {
+    const s = localStorage.getItem('v16_life_finance');
+    if (s) {
+        const p = JSON.parse(s);
+        appData = { ...appData, ...p };
+        if (!appData.responsibilities) appData.responsibilities = [];
+        if (!appData.cashflow) appData.cashflow = { salary: 0, payday: 5 };
+        if (!appData.milestoneTarget) appData.milestoneTarget = 100000;
+    }
+}
+function saveData() { localStorage.setItem('v16_life_finance', JSON.stringify(appData)); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        // --- Logic Functions ---
-        function closeOnboarding() { appData.isFirstTime = false; saveData(); document.getElementById('onboardingModal').classList.add('hidden'); openSettings(); }
-        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); updateRatioTotal(); }
-        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-        function toggleReminderInput() { document.getElementById('reminderTimeBlock').className = document.getElementById('setReminderToggle').checked ? '' : 'hidden'; }
-        function updateRatioTotal() {
-            const sum = parseInt(document.getElementById('setLiving').value||0) + parseInt(document.getElementById('setSavings').value||0) + parseInt(document.getElementById('setInvest').value||0) + parseInt(document.getElementById('setEnt').value||0);
-            const disp = document.getElementById('totalRatioDisplay');
-            disp.innerText = `目前總計: ${sum}%`;
-            disp.className = sum === 100 ? 'text-right text-xs font-bold mt-2 text-green-600' : 'text-right text-xs font-bold mt-2 text-red-500';
-        }
-        ['setLiving','setSavings','setInvest','setEnt'].forEach(id => document.getElementById(id).addEventListener('input', updateRatioTotal));
-        function saveSettings() {
-            const l = parseInt(document.getElementById('setLiving').value), s = parseInt(document.getElementById('setSavings').value), i = parseInt(document.getElementById('setInvest').value), e = parseInt(document.getElementById('setEnt').value);
-            if(l+s+i+e !== 100) return alert('比例總和必須是 100% 喔！');
-            appData.allocation = { living: l, savings: s, investment: i, entertainment: e };
-            appData.settings.reminderEnabled = document.getElementById('setReminderToggle').checked;
-            appData.settings.reminderTime = document.getElementById('setReminderTime').value;
-            saveData(); closeSettings(); refreshUI(); checkGoals(true); 
-        }
-        function resetAllData() {
-            if(confirm("確定要重置所有資料嗎？\n這將刪除所有記帳紀錄、目標與設定，且無法復原。")) {
-                localStorage.removeItem('v15_app_data');
-                location.reload();
-            }
-        }
+// ═══════════════════════════════════════
+// REFRESH ALL UI
+// ═══════════════════════════════════════
+function refreshUI() {
+    renderHeader();
+    renderAccounts();
+    renderCategoryGrid();
+    renderTransactions();
+    renderGoalList();
+    renderRespList();
+    updateAccountSelects();
+    renderPrediction();
+    renderMilestone();
+    updateSurvivalBar();
+    // Settings inputs
+    document.getElementById('setLiving').value = appData.allocation.living;
+    document.getElementById('setSavings').value = appData.allocation.savings;
+    document.getElementById('setInvest').value = appData.allocation.investment;
+    document.getElementById('setEnt').value = appData.allocation.entertainment;
+    document.getElementById('setMilestone').value = appData.milestoneTarget;
+    document.getElementById('cfSalary').value = appData.cashflow.salary || '';
+    document.getElementById('cfPayday').value = appData.cashflow.payday || '';
+    updateRatioTotal();
+}
 
-        function getAccountBalance(accId) {
-            const acc = appData.accounts.find(a => a.id === accId); if(!acc) return 0;
-            const trans = appData.transactions.filter(t => t.accountId === accId);
-            return acc.initialBalance + trans.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0) - trans.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-        }
-        function getTotalAssets() { return appData.accounts.reduce((sum, acc) => sum + getAccountBalance(acc.id), 0); }
-        
-        function renderHeader() {
-            const total = getTotalAssets();
-            const totalEl = document.getElementById('totalAssets');
-            totalEl.innerText = total.toLocaleString();
-            // Color code total assets
-            totalEl.className = `text-4xl font-bold tracking-wider ${total < 0 ? 'text-red-400' : 'text-white'}`;
+// ═══════════════════════════════════════
+// HEADER & ACCOUNTS
+// ═══════════════════════════════════════
+function getAccountBalance(id) {
+    const acc = appData.accounts.find(a => a.id === id);
+    if (!acc) return 0;
+    const txs = appData.transactions.filter(t => t.accountId === id);
+    return acc.initialBalance
+        + txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
+        - txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+}
+function getTotalAssets() { return appData.accounts.reduce((s, a) => s + getAccountBalance(a.id), 0); }
 
-            document.getElementById('allocLiving').innerText = appData.allocation.living + '%';
-            document.getElementById('allocSavings').innerText = appData.allocation.savings + '%';
-            document.getElementById('allocInvest').innerText = appData.allocation.investment + '%';
-            document.getElementById('allocEnt').innerText = appData.allocation.entertainment + '%';
-        }
+function renderHeader() {
+    const total = getTotalAssets();
+    const el = document.getElementById('totalAssetsHeader');
+    el.textContent = '$' + total.toLocaleString();
+    el.style.color = total < 0 ? 'var(--danger)' : 'white';
+    document.getElementById('hAllocLiving').textContent = appData.allocation.living;
+    document.getElementById('hAllocSavings').textContent = appData.allocation.savings;
+    document.getElementById('hAllocInvest').textContent = appData.allocation.investment;
+    document.getElementById('hAllocEnt').textContent = appData.allocation.entertainment;
 
-        function renderAccounts() {
-            const container = document.getElementById('accountListContainer');
-            if(appData.accounts.length === 0) {
-                container.innerHTML = '<div class="text-xs text-gray-400 p-2">點擊「管理」新增帳戶</div>';
-            } else {
-                container.innerHTML = appData.accounts.map(acc => {
-                    const bal = getAccountBalance(acc.id);
-                    const balClass = bal < 0 ? 'text-red-500' : 'text-gray-900';
-                    return `<div onclick="editAccount('${acc.id}')" class="flex-shrink-0 bg-white border border-gray-100 rounded-2xl p-3 w-32 shadow-sm flex flex-col justify-between cursor-pointer hover:border-blue-200 hover:shadow-md transition group"><span class="text-xs text-gray-500 font-bold truncate group-hover:text-blue-500 transition">${acc.name}</span><span class="text-lg font-bold ${balClass} truncate">$${bal.toLocaleString()}</span></div>`
-                }).join('');
-            }
-        }
-        function updateAccountSelects() {
-            const h = appData.accounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
-            document.getElementById('accountSelect').innerHTML = h || '<option>請先建立帳戶</option>'; 
-            document.getElementById('goalAccountSelect').innerHTML = h || '<option>請先建立帳戶</option>';
-        }
-        function openAccountModal(id) {
-            const m = document.getElementById('accountModal'); m.classList.remove('hidden');
-            const acc = id ? appData.accounts.find(a=>a.id===id) : null;
-            document.getElementById('accModalTitle').innerText = acc?"編輯帳戶":"新增帳戶";
-            document.getElementById('accId').value = acc?acc.id:'';
-            document.getElementById('accName').value = acc?acc.name:'';
-            document.getElementById('accBalance').value = acc?acc.initialBalance:'';
-            document.getElementById('btnDelAcc').className = acc ? "w-full mt-4 text-red-400 text-xs py-2 font-bold hover:bg-red-50 rounded-xl transition" : "hidden";
-        }
-        function editAccount(id){ openAccountModal(id); }
-        function saveAccount() {
-            const id = document.getElementById('accId').value, name = document.getElementById('accName').value, bal = parseInt(document.getElementById('accBalance').value);
-            if(!name) return alert('請輸入名稱');
-            // Allow negative initial balance (no check for < 0)
-            if(id) { const idx = appData.accounts.findIndex(a=>a.id===id); appData.accounts[idx].name=name; appData.accounts[idx].initialBalance=bal||0; }
-            else appData.accounts.push({ id: 'acc_'+Date.now(), name, initialBalance: bal||0 });
-            saveData(); document.getElementById('accountModal').classList.add('hidden'); refreshUI(); checkGoals(true);
-        }
-        function deleteAccountCurrent() {
-            if(appData.accounts.length<=1) return alert('至少保留一個帳戶');
-            if(confirm('刪除此帳戶？相關記帳資料將會顯示為未知帳戶。')) { appData.accounts = appData.accounts.filter(a=>a.id!==document.getElementById('accId').value); saveData(); document.getElementById('accountModal').classList.add('hidden'); refreshUI(); }
-        }
+    // Health badge
+    const badge = document.getElementById('healthBadge');
+    const savingsRate = total > 0 ? (appData.allocation.savings) : 0;
+    if (total < 0) { badge.textContent = '透支 ⚠'; badge.style.color = 'var(--danger)'; badge.style.background = 'rgba(248,113,113,0.15)'; }
+    else if (savingsRate >= 20) { badge.textContent = '健康 ✦'; badge.style.color = 'var(--accent)'; badge.style.background = 'rgba(110,231,183,0.15)'; }
+    else { badge.textContent = '待優化 ○'; badge.style.color = 'var(--accent3)'; badge.style.background = 'rgba(251,191,36,0.15)'; }
+}
 
-        function openCategoryManager() { document.getElementById('categoryModal').classList.remove('hidden'); renderIconPicker(); renderCategoryListEdit(); }
-        function renderIconPicker() { document.getElementById('iconPicker').innerHTML = availableIcons.map(i=>`<div onclick="selectedIcon='${i}';renderIconPicker()" class="text-center text-xl cursor-pointer p-1 rounded-lg transition ${selectedIcon===i?'bg-gray-800 text-white scale-110 shadow-md':'hover:bg-gray-100'}">${i}</div>`).join(''); }
-        function addNewCategory() {
-            const name = document.getElementById('newCatName').value;
-            if(!name) return alert('輸入名稱');
-            appData.categories.push({ id: 'cat_'+Date.now(), name, icon: selectedIcon, bucket: document.getElementById('newCatBucket').value, type: 'expense' });
-            saveData(); renderCategoryListEdit(); renderCategoryGrid(); document.getElementById('newCatName').value='';
-        }
-        function renderCategoryListEdit() {
-            document.getElementById('categoryListEdit').innerHTML = appData.categories.map(c=>`<div class="flex justify-between items-center bg-white p-2 rounded-xl border border-gray-100 mb-1.5 shadow-sm"><div class="flex items-center gap-2"><span>${c.icon}</span><span class="text-sm font-bold text-gray-700">${c.name}</span><span class="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">${c.bucket}</span></div><button onclick="deleteCategory('${c.id}')" class="text-gray-300 hover:text-red-500 font-bold px-2 transition">×</button></div>`).join('');
-        }
-        function deleteCategory(id) { if(confirm('刪除？')) { appData.categories = appData.categories.filter(c=>c.id!==id); saveData(); renderCategoryListEdit(); renderCategoryGrid(); } }
-        function setTransactionType(t) {
-            currentTransType = t;
-            document.getElementById('toggleBg').style.left = t==='expense'?'4px':'50%';
-            document.getElementById('btnExpense').className = t==='expense'?'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300 rounded-xl':'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300 rounded-xl';
-            document.getElementById('btnIncome').className = t==='income'?'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm transition-colors duration-300 rounded-xl':'w-1/2 text-center py-2 z-10 cursor-pointer font-bold text-sm text-gray-500 transition-colors duration-300 rounded-xl';
-            const btn = document.getElementById('addBtn'); 
-            const txt = document.getElementById('addBtnText');
-            txt.innerText = t==='expense'?'新增支出':'新增收入'; 
-            btn.className = t==='expense'?'w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-black flex justify-center items-center gap-2':'w-full bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-green-700 flex justify-center items-center gap-2';
-            document.getElementById('amountInput').className = t==='expense'?'w-full text-3xl font-bold text-gray-800 bg-gray-50 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-gray-900 transition placeholder-gray-300':'w-full text-3xl font-bold text-green-600 bg-gray-50 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-green-600 transition placeholder-gray-300';
-            renderCategoryGrid();
-        }
-        function renderCategoryGrid() {
-            const cats = appData.categories; if(!selectedCatId && cats.length) selectedCatId=cats[0].id;
-            document.getElementById('categoryGrid').innerHTML = cats.map(c=>`<button onclick="selectedCatId='${c.id}';renderCategoryGrid()" class="flex flex-col items-center justify-center p-2 rounded-xl border ${selectedCatId===c.id?'bg-gray-800 text-white border-gray-800 scale-105 shadow-md':'bg-white text-gray-500 border-transparent hover:bg-gray-50'} transition-all"><span class="text-xl mb-1">${c.icon}</span><span class="text-[10px] font-medium truncate w-full text-center">${c.name}</span></button>`).join('');
-        }
-        function addTransaction() {
-            if(appData.accounts.length === 0) return alert('請先建立一個帳戶！');
-            const amt = parseInt(document.getElementById('amountInput').value), note = document.getElementById('noteInput').value;
-            if(!amt) return alert('輸入金額');
-            
-            // Logic update: Allow adding expense even if balance < 0. No checks here.
-            appData.transactions.unshift({ id: Date.now(), amount: amt, type: currentTransType, categoryId: selectedCatId, accountId: document.getElementById('accountSelect').value, note: note, date: new Date().toISOString() });
-            
-            saveData(); document.getElementById('amountInput').value=''; document.getElementById('noteInput').value='';
-            refreshUI(); setTimeout(()=>checkGoals(true),300);
-        }
-        function renderTransactions() {
-            const list = document.getElementById('transactionList');
-            if(!appData.transactions.length) return list.innerHTML = `<div class="text-center py-12 opacity-50"><p class="text-5xl mb-3 grayscale">🍃</p><p class="text-sm font-bold text-gray-400">尚無紀錄，開始記帳吧！</p></div>`;
-            list.innerHTML = appData.transactions.slice(0,30).map(t=>{
-                const c = appData.categories.find(x=>x.id===t.categoryId)||{icon:'?',name:'未知',bucket:'living'};
-                const a = appData.accounts.find(x=>x.id===t.accountId)||{name:'未知帳戶'};
-                const d = new Date(t.date);
-                return `<div class="flex items-center justify-between bg-white p-3 rounded-2xl shadow-sm border border-gray-50 hover:border-gray-200 transition group"><div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-lg shrink-0 border border-gray-100">${c.icon}</div><div class="min-w-0"><p class="font-bold text-gray-800 text-sm truncate">${t.note||c.name}</p><div class="flex items-center gap-2 text-xs text-gray-400"><span>${d.getMonth()+1}/${d.getDate()}</span><span class="bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">${a.name}</span><span class="bg-blue-50 text-blue-400 px-1.5 py-0.5 rounded">${c.bucket}</span></div></div></div><div class="flex items-center gap-2 shrink-0"><span class="font-bold text-lg ${t.type==='expense'?'text-gray-900':'text-green-600'}">${t.type==='expense'?'-':'+'}$${t.amount}</span><button onclick="deleteTrans(${t.id})" class="text-gray-300 hover:text-red-500 px-2 font-bold opacity-0 group-hover:opacity-100 transition text-xl">×</button></div></div>`;
-            }).join('');
-        }
-        function deleteTrans(id) { if(confirm('刪除這筆紀錄？')) { appData.transactions = appData.transactions.filter(t=>t.id!==id); saveData(); refreshUI(); checkGoals(false); } }
+function renderAccounts() {
+    const c = document.getElementById('accountListContainer');
+    if (!appData.accounts.length) { c.innerHTML = '<p class="text-xs py-2" style="color:var(--muted)">點擊管理新增帳戶</p>'; return; }
+    c.innerHTML = appData.accounts.map(a => {
+        const bal = getAccountBalance(a.id);
+        const col = bal < 0 ? 'var(--danger)' : 'var(--accent)';
+        return `<div onclick="editAccount('${a.id}')" class="shrink-0 card p-3 w-32 cursor-pointer transition active:scale-95 hover:border-opacity-80" style="border-color: var(--border);">
+            <p class="text-xs font-bold truncate mb-1" style="color: var(--muted);">${a.name}</p>
+            <p class="mono text-base font-bold" style="color: ${col};">$${bal.toLocaleString()}</p>
+        </div>`;
+    }).join('');
+}
 
-        // --- Waterfall Goal Logic ---
-        function openGoalModal() { document.getElementById('goalModal').classList.remove('hidden'); }
-        function saveGoal() {
-            const name = document.getElementById('goalName').value, target = parseInt(document.getElementById('goalAmount').value);
-            if(!name || !target) return alert('資料不全');
-            appData.goals.push({ id: 'goal_'+Date.now(), name, target, accountId: document.getElementById('goalAccountSelect').value, completed: false, celebrated: false });
-            saveData(); document.getElementById('goalModal').classList.add('hidden'); refreshUI(); checkGoals(true);
-        }
-        function deleteGoal(id) { if(confirm('放棄目標？')) { appData.goals = appData.goals.filter(g=>g.id!==id); saveData(); refreshUI(); } }
-        function moveGoal(idx, dir) {
-            if(dir===-1 && idx>0) [appData.goals[idx], appData.goals[idx-1]] = [appData.goals[idx-1], appData.goals[idx]];
-            else if(dir===1 && idx<appData.goals.length-1) [appData.goals[idx], appData.goals[idx+1]] = [appData.goals[idx+1], appData.goals[idx]];
-            saveData(); refreshUI();
-        }
+function updateAccountSelects() {
+    const h = appData.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+    ['accountSelect','goalAccountSelect'].forEach(id => { document.getElementById(id).innerHTML = h || '<option>請先建立帳戶</option>'; });
+}
 
-        function renderGoalList() {
-            const container = document.getElementById('goalsContainer');
-            if(!appData.goals.length) return container.innerHTML = '<div class="text-center text-gray-400 py-12"><p class="text-5xl mb-3">🎯</p><p class="text-sm font-bold">還沒有目標，快去設定吧！</p></div>';
+// ═══════════════════════════════════════
+// ACCOUNT MODAL
+// ═══════════════════════════════════════
+function openAccountModal(id) {
+    const m = document.getElementById('accountModal'), acc = id ? appData.accounts.find(a => a.id === id) : null;
+    m.classList.remove('hidden');
+    document.getElementById('accModalTitle').textContent = acc ? '編輯帳戶' : '新增帳戶';
+    document.getElementById('accId').value = acc ? acc.id : '';
+    document.getElementById('accName').value = acc ? acc.name : '';
+    document.getElementById('accBalance').value = acc ? acc.initialBalance : '';
+    document.getElementById('btnDelAcc').className = acc ? 'w-full mt-3 py-2 text-xs font-bold rounded-xl transition' : 'hidden';
+}
+function editAccount(id) { openAccountModal(id); }
+function saveAccount() {
+    const id = document.getElementById('accId').value, name = document.getElementById('accName').value, bal = parseFloat(document.getElementById('accBalance').value) || 0;
+    if (!name) return alert('請輸入名稱');
+    if (id) { const i = appData.accounts.findIndex(a => a.id === id); appData.accounts[i].name = name; appData.accounts[i].initialBalance = bal; }
+    else appData.accounts.push({ id: 'acc_' + Date.now(), name, initialBalance: bal });
+    saveData(); closeModal('accountModal'); refreshUI(); checkGoals(true);
+}
+function deleteAccountCurrent() {
+    if (appData.accounts.length <= 1) return alert('至少保留一個帳戶');
+    if (confirm('刪除此帳戶？')) { appData.accounts = appData.accounts.filter(a => a.id !== document.getElementById('accId').value); saveData(); closeModal('accountModal'); refreshUI(); }
+}
 
-            const accountFunds = {};
-            appData.accounts.forEach(a => {
-                const bal = getAccountBalance(a.id);
-                // V15 Logic: Ensure funds are capped at 0. If balance is negative, goal funds = 0.
-                accountFunds[a.id] = Math.max(0, Math.floor(bal * (appData.allocation.entertainment / 100)));
-            });
+// ═══════════════════════════════════════
+// TRANSACTIONS
+// ═══════════════════════════════════════
+function setTxType(t) {
+    currentTxType = t;
+    const isExp = t === 'expense';
+    document.getElementById('btnExp').style.cssText = isExp ? 'background:var(--accent);color:#0f0f13;' : 'color:var(--muted);background:transparent;';
+    document.getElementById('btnInc').style.cssText = !isExp ? 'background:var(--accent2);color:#fff;' : 'color:var(--muted);background:transparent;';
+    document.getElementById('addBtnText').textContent = isExp ? '新增支出' : '新增收入';
+    document.getElementById('addBtn').style.background = isExp ? 'var(--accent)' : 'var(--accent2)';
+    document.getElementById('addBtn').style.color = isExp ? '#0f0f13' : '#fff';
+    renderCategoryGrid();
+}
 
-            let html = '';
-            appData.goals.forEach((g, idx) => {
-                let statusLabel = '';
-                let progress = 0;
-                let currentAvailable = 0;
-                let pool = accountFunds[g.accountId] || 0;
-                
-                let actionButtons = '';
-                if (!g.completed) {
-                    if(idx > 0) actionButtons += `<button onclick="moveGoal(${idx}, -1)" class="text-gray-400 hover:text-black p-1.5 border rounded-lg bg-gray-50 hover:bg-white transition">⬆️</button>`;
-                    if(idx < appData.goals.length-1) actionButtons += `<button onclick="moveGoal(${idx}, 1)" class="text-gray-400 hover:text-black p-1.5 border rounded-lg bg-gray-50 hover:bg-white transition ml-1">⬇️</button>`;
-                }
-                actionButtons += `<button onclick="deleteGoal('${g.id}')" class="text-red-300 hover:text-red-500 ml-2 p-1.5 font-bold transition">×</button>`;
+function renderCategoryGrid() {
+    if (!selectedCatId && appData.categories.length) selectedCatId = appData.categories[0].id;
+    document.getElementById('categoryGrid').innerHTML = appData.categories.map(c =>
+        `<button onclick="selectedCatId='${c.id}';renderCategoryGrid()" class="flex flex-col items-center justify-center p-2 rounded-xl border transition-all active:scale-95" style="${selectedCatId === c.id ? 'background:var(--accent);color:#0f0f13;border-color:var(--accent);' : 'background:var(--surface2);color:var(--muted);border-color:var(--border);'}">
+            <span class="text-lg mb-0.5">${c.icon}</span>
+            <span style="font-size:10px;font-weight:700;">${c.name}</span>
+        </button>`
+    ).join('');
+}
 
-                if (g.completed) {
-                    if (pool >= g.target) accountFunds[g.accountId] -= g.target;
-                    progress = 100;
-                    statusLabel = '<span class="text-[10px] bg-yellow-100 text-yellow-600 px-2 py-1 rounded-full font-bold border border-yellow-200">🎉 已完成</span>';
-                } else {
-                    currentAvailable = Math.min(pool, g.target);
-                    if (currentAvailable >= g.target) {
-                        progress = 100;
-                        statusLabel = '<span class="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded-full font-bold border border-green-200">✨ 優先存錢</span>';
-                    } else if (currentAvailable > 0) {
-                        progress = (currentAvailable / g.target) * 100;
-                        statusLabel = '<span class="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full font-bold border border-indigo-200">💰 存錢中</span>';
-                    } else {
-                        progress = 0;
-                        statusLabel = '<span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-bold border border-gray-200">⏳ 排隊中</span>';
-                    }
-                    accountFunds[g.accountId] -= currentAvailable;
-                }
+function addTransaction() {
+    if (!appData.accounts.length) return alert('請先建立帳戶');
+    const amt = parseInt(document.getElementById('amountInput').value);
+    if (!amt || amt <= 0) return alert('請輸入金額');
+    appData.transactions.unshift({ id: Date.now(), amount: amt, type: currentTxType, categoryId: selectedCatId, accountId: document.getElementById('accountSelect').value, note: document.getElementById('noteInput').value, date: new Date().toISOString() });
+    saveData();
+    document.getElementById('amountInput').value = '';
+    document.getElementById('noteInput').value = '';
+    refreshUI();
+    setTimeout(() => checkGoals(true), 300);
+}
 
-                html += `
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden mb-3 transition-all ${g.completed ? 'goal-completed shadow-md' : 'hover:border-indigo-100'}">
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <h3 class="font-bold text-gray-800 text-lg">${g.name}</h3>
-                                ${statusLabel}
-                            </div>
-                            <p class="text-xs text-gray-400 font-bold">目標: $${g.target.toLocaleString()}</p>
-                        </div>
-                        <div class="flex items-center">
-                            ${actionButtons}
-                        </div>
+function renderTransactions() {
+    const list = document.getElementById('transactionList');
+    if (!appData.transactions.length) { list.innerHTML = `<div class="text-center py-10"><p class="text-4xl mb-3 opacity-40">🌱</p><p class="text-sm font-bold" style="color:var(--muted)">尚無紀錄</p></div>`; return; }
+    list.innerHTML = appData.transactions.slice(0, 30).map(t => {
+        const c = appData.categories.find(x => x.id === t.categoryId) || { icon: '?', name: '未知' };
+        const a = appData.accounts.find(x => x.id === t.accountId) || { name: '未知帳戶' };
+        const d = new Date(t.date);
+        const isInc = t.type === 'income';
+        return `<div class="flex items-center justify-between card p-3 group" style="border-color: var(--border);">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0" style="background:var(--surface2);">${c.icon}</div>
+                <div class="min-w-0">
+                    <p class="font-bold text-sm truncate text-white">${t.note || c.name}</p>
+                    <p class="text-xs" style="color:var(--muted);">${d.getMonth()+1}/${d.getDate()} · ${a.name}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="mono font-bold text-base" style="color:${isInc ? 'var(--accent)' : 'var(--text)'};">${isInc ? '+' : '-'}$${t.amount.toLocaleString()}</span>
+                <button onclick="deleteTrans(${t.id})" class="opacity-0 group-hover:opacity-100 font-bold transition text-lg" style="color:var(--danger);">×</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+function deleteTrans(id) { if (confirm('刪除？')) { appData.transactions = appData.transactions.filter(t => t.id !== id); saveData(); refreshUI(); checkGoals(false); } }
+
+// ═══════════════════════════════════════
+// RESPONSIBILITIES (NEW FEATURE)
+// ═══════════════════════════════════════
+function openRespModal() {
+    document.getElementById('respModal').classList.remove('hidden');
+    // Set default start to current month
+    const now = new Date();
+    document.getElementById('respStart').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+}
+
+function saveResp() {
+    const name = document.getElementById('respName').value;
+    const monthly = parseInt(document.getElementById('respMonthly').value);
+    if (!name || !monthly) return alert('請填寫名稱與金額');
+    appData.responsibilities.push({
+        id: 'resp_' + Date.now(),
+        name, monthly,
+        type: document.getElementById('respType').value,
+        start: document.getElementById('respStart').value,
+        end: document.getElementById('respEnd').value || null
+    });
+    saveData();
+    closeModal('respModal');
+    document.getElementById('respName').value = '';
+    document.getElementById('respMonthly').value = '';
+    document.getElementById('respEnd').value = '';
+    renderRespList();
+    renderRespSummary();
+    renderPrediction();
+}
+
+function deleteResp(id) {
+    if (confirm('移除此責任？')) {
+        appData.responsibilities = appData.responsibilities.filter(r => r.id !== id);
+        saveData();
+        renderRespList();
+        renderRespSummary();
+        renderPrediction();
+    }
+}
+
+function getActiveResp() {
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    return appData.responsibilities.filter(r => {
+        if (r.start && r.start > ym) return false;
+        if (r.end && r.end < ym) return false;
+        return true;
+    });
+}
+
+function getMonthlyRespTotal() {
+    return getActiveResp().reduce((s, r) => s + r.monthly, 0);
+}
+
+function renderRespList() {
+    const list = document.getElementById('respList');
+    if (!appData.responsibilities.length) {
+        list.innerHTML = `<div class="text-center py-8"><p class="text-3xl mb-2 opacity-40">📋</p><p class="text-sm font-bold" style="color:var(--muted)">還沒有固定責任</p></div>`;
+        renderRespSummary();
+        return;
+    }
+    list.innerHTML = appData.responsibilities.map(r => {
+        const isActive = getActiveResp().some(ar => ar.id === r.id);
+        return `<div class="card p-3.5 flex items-center justify-between resp-item">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">${RESP_ICONS[r.type] || '📌'}</span>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <p class="font-bold text-sm text-white">${r.name}</p>
+                        <span class="badge" style="${isActive ? 'background:rgba(110,231,183,0.1);color:var(--accent)' : 'background:var(--surface2);color:var(--muted)'}">
+                            ${isActive ? '進行中' : (r.end ? '已結束' : '未開始')}
+                        </span>
                     </div>
-                    <div class="w-full bg-gray-100 rounded-full h-3 mb-2 overflow-hidden shadow-inner">
-                        <div class="${g.completed ? 'bg-yellow-400' : 'bg-indigo-500'} h-3 rounded-full transition-all duration-1000 ease-out" style="width: ${progress}%"></div>
-                    </div>
-                    <div class="flex justify-between text-xs font-bold text-gray-500">
-                        <span>${Math.floor(progress)}% (${g.completed ? '已鎖定' : (progress===0 ? '等待資金' : '可用 $'+currentAvailable.toLocaleString())})</span>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
+                    <p class="text-xs" style="color:var(--muted);">${r.start || '—'} ${r.end ? '→ ' + r.end : '→ 持續中'}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <span class="mono font-bold text-base" style="color:var(--accent2);">$${r.monthly.toLocaleString()}</span>
+                <button onclick="deleteResp('${r.id}')" class="font-bold text-lg transition" style="color:var(--danger);">×</button>
+            </div>
+        </div>`;
+    }).join('');
+    renderRespSummary();
+}
+
+function renderRespSummary() {
+    const total = getMonthlyRespTotal();
+    document.getElementById('respTotalMonthly').textContent = '$' + total.toLocaleString();
+    const salary = appData.cashflow.salary || 0;
+    const pct = salary > 0 ? Math.round(total / salary * 100) : 0;
+    document.getElementById('respPct').textContent = salary > 0 ? pct + '%' : '請設定薪資';
+    document.getElementById('respPct').style.color = pct > 50 ? 'var(--danger)' : pct > 30 ? 'var(--accent3)' : 'var(--accent)';
+}
+
+function saveCashflowConfig() {
+    appData.cashflow.salary = parseInt(document.getElementById('cfSalary').value) || 0;
+    appData.cashflow.payday = parseInt(document.getElementById('cfPayday').value) || 5;
+    saveData();
+    renderRespSummary();
+    renderPrediction();
+    updateSurvivalBar();
+    renderHeader();
+}
+
+// ═══════════════════════════════════════
+// SURVIVAL MODE BAR (NEW)
+// ═══════════════════════════════════════
+function updateSurvivalBar() {
+    const payday = appData.cashflow.payday || 5;
+    const total = getTotalAssets();
+    const now = new Date();
+    const today = now.getDate();
+
+    let daysLeft;
+    if (today < payday) {
+        daysLeft = payday - today;
+    } else {
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, payday);
+        daysLeft = Math.ceil((nextMonth - now) / (1000 * 60 * 60 * 24));
+    }
+
+    const daysInCycle = payday <= today
+        ? (new Date(now.getFullYear(), now.getMonth() + 1, payday) - new Date(now.getFullYear(), now.getMonth(), payday)) / (1000 * 60 * 60 * 24)
+        : payday - 1;
+
+    const dailyBudget = daysLeft > 0 ? Math.floor(total / daysLeft) : 0;
+
+    document.getElementById('survivalDaysLeft').textContent = daysLeft + ' 天';
+    document.getElementById('survivalDaily').textContent = dailyBudget >= 0 ? '$' + dailyBudget.toLocaleString() : '⚠ 透支';
+
+    const progress = daysInCycle > 0 ? Math.max(0, Math.min(100, ((daysInCycle - daysLeft) / daysInCycle) * 100)) : 0;
+    document.getElementById('survivalFill').style.width = progress + '%';
+
+    const fill = document.getElementById('survivalFill');
+    const daily = document.getElementById('survivalDaily');
+    const daysEl = document.getElementById('survivalDaysLeft');
+    if (dailyBudget < 0) {
+        fill.style.background = 'var(--danger)';
+        daily.style.color = 'var(--danger)';
+        daysEl.style.color = 'var(--danger)';
+    } else if (dailyBudget < 300) {
+        fill.style.background = 'var(--accent3)';
+        daily.style.color = 'var(--accent3)';
+        daysEl.style.color = 'var(--accent3)';
+    } else {
+        fill.style.background = 'var(--accent)';
+        daily.style.color = 'var(--accent)';
+        daysEl.style.color = 'var(--accent)';
+    }
+}
+
+// ═══════════════════════════════════════
+// CASHFLOW PREDICTION (NEW)
+// ═══════════════════════════════════════
+function getMonthlySavings() {
+    const salary = appData.cashflow.salary || 0;
+    const respTotal = getMonthlyRespTotal();
+    // Estimate monthly expenses from last 3 months of transactions
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    const recentExp = appData.transactions.filter(t => t.type === 'expense' && new Date(t.date) >= threeMonthsAgo);
+    const months = 3;
+    const avgMonthlyExp = recentExp.length > 0 ? Math.round(recentExp.reduce((s, t) => s + t.amount, 0) / months) : 0;
+    return salary - respTotal - avgMonthlyExp;
+}
+
+function renderPrediction() {
+    const container = document.getElementById('predictionList');
+    const salary = appData.cashflow.salary || 0;
+    const monthlySavings = getMonthlySavings();
+    const currentAssets = getTotalAssets();
+
+    const milestones = [1, 3, 6, 12];
+    const colors = ['var(--accent2)', 'var(--accent)', 'var(--accent)', 'var(--accent3)'];
+
+    container.innerHTML = milestones.map((m, i) => {
+        const projected = currentAssets + monthlySavings * m;
+        const now = new Date();
+        const targetDate = new Date(now.getFullYear(), now.getMonth() + m, now.getDate());
+        const dateStr = `${targetDate.getFullYear()}/${targetDate.getMonth()+1}`;
+        const isPositive = projected >= currentAssets;
+
+        return `<div class="flex items-start gap-4 pb-5 relative pred-line">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 z-10 mt-0.5" style="background: ${colors[i]}; color: #0f0f13;">${m}M</div>
+            <div class="flex-1">
+                <div class="flex justify-between items-baseline">
+                    <span class="text-sm font-bold text-white">${dateStr}</span>
+                    <span class="mono text-base font-black" style="color: ${projected < 0 ? 'var(--danger)' : colors[i]};">$${projected.toLocaleString()}</span>
+                </div>
+                <p class="text-xs mt-0.5" style="color:var(--muted);">
+                    ${monthlySavings >= 0 ? '+$' + monthlySavings.toLocaleString() + '/月' : '虧損 $' + Math.abs(monthlySavings).toLocaleString() + '/月'}
+                </p>
+            </div>
+        </div>`;
+    }).join('');
+
+    renderCfBreakdown(salary, monthlySavings);
+}
+
+function renderCfBreakdown(salary, monthlySavings) {
+    const respTotal = getMonthlyRespTotal();
+    const now = new Date();
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    const avgExp = appData.transactions.filter(t => t.type === 'expense' && new Date(t.date) >= threeMonthsAgo).reduce((s, t) => s + t.amount, 0) / 3;
+    const rows = [
+        { label: '💼 月薪', val: salary, color: 'var(--accent)', sign: '+' },
+        { label: '📋 固定責任', val: respTotal, color: 'var(--accent2)', sign: '-' },
+        { label: '🛒 平均變動支出', val: Math.round(avgExp), color: 'var(--danger)', sign: '-' },
+        { label: '💰 月淨結餘', val: monthlySavings, color: monthlySavings >= 0 ? 'var(--accent)' : 'var(--danger)', sign: monthlySavings >= 0 ? '+' : '' },
+    ];
+    document.getElementById('cfBreakdown').innerHTML = rows.map(r =>
+        `<div class="flex justify-between items-center">
+            <span class="text-sm font-bold" style="color:var(--muted);">${r.label}</span>
+            <span class="mono font-bold text-sm" style="color:${r.color};">${r.sign}$${Math.abs(r.val).toLocaleString()}</span>
+        </div>`
+    ).join('') + (salary === 0 ? `<p class="text-xs text-center py-2" style="color:var(--muted);">← 請在「責任」頁設定月薪</p>` : '');
+}
+
+// ═══════════════════════════════════════
+// MILESTONE (NEW)
+// ═══════════════════════════════════════
+function renderMilestone() {
+    const target = appData.milestoneTarget || 100000;
+    const current = Math.max(0, getTotalAssets());
+    const pct = Math.min(100, Math.round(current / target * 100));
+    const monthlySavings = getMonthlySavings();
+
+    document.getElementById('milestoneAmt').textContent = '$' + target.toLocaleString();
+    document.getElementById('milestoneNow').textContent = '$' + current.toLocaleString();
+    document.getElementById('milestonePct').textContent = pct + '%';
+    document.getElementById('milestoneFill').style.width = pct + '%';
+
+    if (monthlySavings > 0 && current < target) {
+        const monthsLeft = Math.ceil((target - current) / monthlySavings);
+        const d = new Date(); d.setMonth(d.getMonth() + monthsLeft);
+        document.getElementById('milestoneDate').textContent = `${d.getFullYear()}年${d.getMonth()+1}月 (${monthsLeft}個月)`;
+    } else if (current >= target) {
+        document.getElementById('milestoneDate').textContent = '🎉 已達成！';
+    } else {
+        document.getElementById('milestoneDate').textContent = '請設定薪資';
+    }
+}
+
+// ═══════════════════════════════════════
+// GOALS
+// ═══════════════════════════════════════
+function openGoalModal() { document.getElementById('goalModal').classList.remove('hidden'); }
+function saveGoal() {
+    const name = document.getElementById('goalName').value, target = parseInt(document.getElementById('goalAmount').value);
+    if (!name || !target) return alert('資料不全');
+    appData.goals.push({ id: 'goal_' + Date.now(), name, target, accountId: document.getElementById('goalAccountSelect').value, completed: false, celebrated: false });
+    saveData(); closeModal('goalModal'); refreshUI(); checkGoals(true);
+}
+function deleteGoal(id) { if (confirm('放棄目標？')) { appData.goals = appData.goals.filter(g => g.id !== id); saveData(); refreshUI(); } }
+function moveGoal(idx, dir) {
+    if (dir === -1 && idx > 0) [appData.goals[idx], appData.goals[idx-1]] = [appData.goals[idx-1], appData.goals[idx]];
+    else if (dir === 1 && idx < appData.goals.length-1) [appData.goals[idx], appData.goals[idx+1]] = [appData.goals[idx+1], appData.goals[idx]];
+    saveData(); refreshUI();
+}
+
+function renderGoalList() {
+    const container = document.getElementById('goalsContainer');
+    if (!appData.goals.length) { container.innerHTML = `<div class="text-center py-12"><p class="text-4xl mb-3 opacity-40">🎯</p><p class="text-sm font-bold" style="color:var(--muted)">還沒有目標，快去設定吧！</p></div>`; return; }
+    const funds = {};
+    appData.accounts.forEach(a => { funds[a.id] = Math.max(0, Math.floor(getAccountBalance(a.id) * appData.allocation.entertainment / 100)); });
+    let html = '';
+    appData.goals.forEach((g, idx) => {
+        let progress = 0, avail = 0, statusHtml = '', barColor = 'var(--accent2)';
+        const pool = funds[g.accountId] || 0;
+        if (g.completed) {
+            if (pool >= g.target) funds[g.accountId] -= g.target;
+            progress = 100; barColor = 'var(--accent3)';
+            statusHtml = `<span class="badge" style="background:rgba(251,191,36,0.1);color:var(--accent3);">🎉 已完成</span>`;
+        } else {
+            avail = Math.min(pool, g.target);
+            progress = g.target > 0 ? (avail / g.target) * 100 : 0;
+            funds[g.accountId] -= avail;
+            if (avail >= g.target) statusHtml = `<span class="badge" style="background:rgba(110,231,183,0.1);color:var(--accent);">✨ 可達成</span>`;
+            else if (avail > 0) statusHtml = `<span class="badge" style="background:rgba(129,140,248,0.1);color:var(--accent2);">💰 累積中</span>`;
+            else statusHtml = `<span class="badge" style="background:var(--surface2);color:var(--muted);">⏳ 排隊中</span>`;
         }
-
-        function checkGoals(canFire) {
-            let newSuccess = false;
-            const accountFunds = {};
-            appData.accounts.forEach(a => { 
-                const bal = getAccountBalance(a.id);
-                accountFunds[a.id] = Math.max(0, Math.floor(bal * (appData.allocation.entertainment / 100))); 
-            });
-            appData.goals.forEach(g => {
-                let pool = accountFunds[g.accountId] || 0;
-                if (g.completed) { if (pool >= g.target) accountFunds[g.accountId] -= g.target; }
-                else {
-                    const avail = Math.min(pool, g.target);
-                    if (avail >= g.target) { g.completed = true; if (!g.celebrated && canFire) { newSuccess = true; g.celebrated = true; } }
-                    accountFunds[g.accountId] -= avail;
-                }
-            });
-            saveData(); renderGoalList();
-            if(newSuccess) { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 9999 }); setTimeout(() => alert("🎆 恭喜！依照您的優先順序，您已達成了一個目標！"), 300); }
+        let btns = '';
+        if (!g.completed) {
+            if (idx > 0) btns += `<button onclick="moveGoal(${idx},-1)" class="text-xs p-1.5 rounded-lg transition" style="background:var(--surface2);color:var(--muted);">↑</button>`;
+            if (idx < appData.goals.length-1) btns += `<button onclick="moveGoal(${idx},1)" class="text-xs p-1.5 rounded-lg transition ml-1" style="background:var(--surface2);color:var(--muted);">↓</button>`;
         }
+        btns += `<button onclick="deleteGoal('${g.id}')" class="font-bold ml-2 text-lg transition" style="color:var(--danger);">×</button>`;
+        html += `<div class="card p-4 ${g.completed ? 'glow-purple' : ''}">
+            <div class="flex justify-between items-start mb-3">
+                <div><div class="flex items-center gap-2 mb-1"><h3 class="font-bold text-white">${g.name}</h3>${statusHtml}</div><p class="text-xs" style="color:var(--muted);">目標 <span class="mono">$${g.target.toLocaleString()}</span></p></div>
+                <div class="flex items-center">${btns}</div>
+            </div>
+            <div class="progress-track h-2.5 mb-2">
+                <div class="progress-fill h-2.5" style="background:${barColor};width:${progress}%"></div>
+            </div>
+            <div class="flex justify-between text-xs font-bold" style="color:var(--muted);">
+                <span>${Math.floor(progress)}% ${g.completed ? '(已鎖定)' : (avail > 0 ? '· 可用 $' + avail.toLocaleString() : '· 等待資金')}</span>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
 
-        // Stats with Historical Data
-        function switchTab(id) { 
-            document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active')); 
-            document.getElementById(id).classList.add('active'); 
-            
-            document.querySelectorAll('.nav-item').forEach(b=>{
-                if(b.dataset.target===id) b.classList.add('active');
-                else b.classList.remove('active');
-            });
-            
-            if(id==='view-stats') updateCharts(); 
+function checkGoals(canFire) {
+    let newSuccess = false;
+    const funds = {};
+    appData.accounts.forEach(a => { funds[a.id] = Math.max(0, Math.floor(getAccountBalance(a.id) * appData.allocation.entertainment / 100)); });
+    appData.goals.forEach(g => {
+        const pool = funds[g.accountId] || 0;
+        if (g.completed) { if (pool >= g.target) funds[g.accountId] -= g.target; }
+        else {
+            const avail = Math.min(pool, g.target);
+            if (avail >= g.target) { g.completed = true; if (!g.celebrated && canFire) { newSuccess = true; g.celebrated = true; } }
+            funds[g.accountId] -= avail;
         }
-        
-        function changeStatPeriod(p) { 
-            statPeriod=p; 
-            document.querySelectorAll('.stat-period-btn').forEach(b=>b.className='flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn text-gray-500 hover:bg-gray-50'); 
-            document.getElementById('yearBtnText').innerText = "年度"; 
+    });
+    saveData(); renderGoalList();
+    if (newSuccess) { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 9999 }); setTimeout(() => alert('🎆 恭喜達成目標！'), 300); }
+}
 
-            if (p === 'year') {
-                document.getElementById('btn-year').className='w-full py-2 text-xs font-bold rounded-xl transition-all stat-period-btn bg-gray-900 text-white shadow-md flex justify-center items-center gap-1';
-                document.getElementById('yearSelect').classList.remove('hidden');
-                document.getElementById('yearBtnText').innerText = selectedStatYear + ' ▼'; 
-            } else {
-                document.getElementById('btn-'+p).className='flex-1 py-2 text-xs font-bold rounded-xl transition-all stat-period-btn bg-gray-900 text-white shadow-md';
-                document.getElementById('yearSelect').classList.add('hidden');
-            }
-            updateCharts(); 
-        }
-        
-        function toggleChartType(t) { chartType=t; document.getElementById('chartTypeExp').className=`text-sm font-bold pb-2 border-b-2 transition-all ${t==='expense'?'border-gray-900':'border-transparent text-gray-400'}`; document.getElementById('chartTypeInc').className=`text-sm font-bold pb-2 border-b-2 transition-all ${t==='income'?'border-gray-900':'border-transparent text-gray-400'}`; updateCharts(); }
-        
-        function updateCharts() {
-            const years = new Set([new Date().getFullYear()]);
-            appData.transactions.forEach(t => years.add(new Date(t.date).getFullYear()));
-            const sortedYears = Array.from(years).sort((a,b) => b-a);
-            
-            const yearSelect = document.getElementById('yearSelect');
-            if (yearSelect.options.length !== sortedYears.length) {
-                yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}" ${y===selectedStatYear?'selected':''}>${y}年</option>`).join('');
-            }
-            if (statPeriod === 'year') {
-                selectedStatYear = parseInt(yearSelect.value);
-                document.getElementById('yearBtnText').innerText = selectedStatYear + ' ▼';
-            }
+// ═══════════════════════════════════════
+// CATEGORIES
+// ═══════════════════════════════════════
+let selectedIcon = ICONS[0];
+function openCategoryManager() { document.getElementById('categoryModal').classList.remove('hidden'); renderIconPicker(); renderCategoryListEdit(); }
+function renderIconPicker() {
+    document.getElementById('iconPicker').innerHTML = ICONS.map(i =>
+        `<div onclick="selectedIcon='${i}';renderIconPicker()" class="text-center text-lg cursor-pointer p-1 rounded-lg transition" style="${selectedIcon===i?'background:var(--accent);':'background:var(--surface2);'}">${i}</div>`
+    ).join('');
+}
+function addNewCategory() {
+    const name = document.getElementById('newCatName').value;
+    if (!name) return alert('輸入名稱');
+    appData.categories.push({ id: 'cat_' + Date.now(), name, icon: selectedIcon, bucket: document.getElementById('newCatBucket').value });
+    saveData(); renderCategoryListEdit(); renderCategoryGrid();
+    document.getElementById('newCatName').value = '';
+}
+function renderCategoryListEdit() {
+    document.getElementById('categoryListEdit').innerHTML = appData.categories.map(c =>
+        `<div class="flex justify-between items-center p-2.5 rounded-xl" style="background:var(--surface2);">
+            <div class="flex items-center gap-2"><span>${c.icon}</span><span class="text-sm font-bold text-white">${c.name}</span><span class="badge" style="background:var(--surface);color:var(--muted);">${c.bucket}</span></div>
+            <button onclick="deleteCategory('${c.id}')" class="font-bold text-lg" style="color:var(--danger);">×</button>
+        </div>`
+    ).join('');
+}
+function deleteCategory(id) { if (confirm('刪除？')) { appData.categories = appData.categories.filter(c => c.id !== id); saveData(); renderCategoryListEdit(); renderCategoryGrid(); } }
 
-            const now=new Date();
-            let label = "";
-            const filtered=appData.transactions.filter(t=>{ 
-                const d=new Date(t.date); 
-                if(statPeriod==='week') { label = "最近 7 天"; return d>=new Date(now.getFullYear(),now.getMonth(),now.getDate()-7); }
-                if(statPeriod==='month') { label = "本月"; return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear(); } 
-                if(statPeriod==='year') { label = `${selectedStatYear} 年度`; return d.getFullYear()===selectedStatYear; }
-                return false;
-            });
+// ═══════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════
+function switchTab(id) {
+    document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => {
+        const isActive = b.dataset.target === id;
+        b.classList.toggle('active', isActive);
+        const icon = b.querySelector('.nav-icon');
+        const label = b.querySelector('.nav-label');
+        if (isActive) { icon.style.background = 'var(--accent)'; icon.style.color = '#0f0f13'; label.style.color = 'var(--accent)'; }
+        else { icon.style.background = 'transparent'; icon.style.color = 'var(--muted)'; label.style.color = 'var(--muted)'; }
+    });
+    if (id === 'view-stats') updateCharts();
+    if (id === 'view-predict') { renderPrediction(); renderMilestone(); }
+    if (id === 'view-resp') { renderRespList(); renderRespSummary(); }
+}
 
-            document.getElementById('chartRangeLabel').innerText = label;
+function changeStatPeriod(p) {
+    statPeriod = p;
+    ['week','month','year'].forEach(x => {
+        const btn = document.getElementById('btn-' + x);
+        if (x === p) { btn.classList.add('seg-active'); btn.style.color = '#0f0f13'; }
+        else { btn.classList.remove('seg-active'); btn.style.color = 'var(--muted)'; }
+    });
+    updateCharts();
+}
 
-            const target=filtered.filter(t=>t.type===chartType), catMap={}; target.forEach(t=>{ const n=appData.categories.find(c=>c.id===t.categoryId)?.name||'未知'; catMap[n]=(catMap[n]||0)+t.amount; });
-            const labels=Object.keys(catMap), data=Object.values(catMap), colors=['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#6366F1'];
-            
-            document.getElementById('noChartData').className = data.length?'hidden':'absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10';
+function toggleChartType(t) {
+    chartType = t;
+    document.getElementById('chartTypeExp').style.cssText = t==='expense' ? `border-color:var(--accent);color:var(--text);` : `border-color:transparent;color:var(--muted);`;
+    document.getElementById('chartTypeInc').style.cssText = t==='income' ? `border-color:var(--accent);color:var(--text);` : `border-color:transparent;color:var(--muted);`;
+    updateCharts();
+}
 
-            const ctx=document.getElementById('categoryChart').getContext('2d'); if(myChart) myChart.destroy();
-            myChart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:data.length?data:[1],backgroundColor:data.length?colors:['transparent'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{display:false}},cutout:'70%', animation: { animateScale: true, animateRotate: true }}});
-            const total=data.reduce((a,b)=>a+b,0); document.getElementById('categoryLegend').innerHTML=labels.map((l,i)=>`<div class="flex justify-between text-xs items-center p-2 hover:bg-gray-50 rounded-lg transition"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background:${colors[i%colors.length]}"></span><span class="font-bold text-gray-700">${l}</span></span><span class="font-bold">$${catMap[l].toLocaleString()} <span class="text-gray-400 font-normal ml-1">(${total?Math.round(catMap[l]/total*100):0}%)</span></span></div>`).join('');
-            
-            const exp=filtered.filter(t=>t.type==='expense'), bucks={living:0,savings:0,investment:0,entertainment:0}; exp.forEach(t=>{const c=appData.categories.find(x=>x.id===t.categoryId); if(c) bucks[c.bucket]+=t.amount;});
-            document.getElementById('bucketAnalysis').innerHTML = Object.entries({living:'🏠 生活',savings:'💰 儲蓄',investment:'📈 投資',entertainment:'🎮 娛樂'}).map(([k,n])=>`<div class="flex justify-between items-center text-xs mb-1.5"><span class="text-gray-600 font-bold">${n}</span><span class="font-bold">$${bucks[k].toLocaleString()}</span></div><div class="w-full bg-gray-100 rounded-full h-2 mb-4 overflow-hidden"><div class="${k==='living'?'bg-blue-500':k==='savings'?'bg-green-500':k==='investment'?'bg-yellow-500':'bg-purple-500'} h-2 rounded-full transition-all duration-1000" style="width:${bucks[k]>0?'100%':'0%'}"></div></div>`).join('');
-        }
-    </script>
+function updateCharts() {
+    const now = new Date();
+    let label = '';
+    const filtered = appData.transactions.filter(t => {
+        const d = new Date(t.date);
+        if (statPeriod === 'week') { label = '最近 7 天'; return d >= new Date(now.getFullYear(), now.getMonth(), now.getDate()-7); }
+        if (statPeriod === 'month') { label = '本月'; return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }
+        if (statPeriod === 'year') { label = now.getFullYear() + ' 年度'; return d.getFullYear() === now.getFullYear(); }
+        return false;
+    });
+    document.getElementById('chartRangeLabel').textContent = label;
+    const target = filtered.filter(t => t.type === chartType), catMap = {};
+    target.forEach(t => { const n = appData.categories.find(c => c.id === t.categoryId)?.name || '未知'; catMap[n] = (catMap[n] || 0) + t.amount; });
+    const labels = Object.keys(catMap), data = Object.values(catMap);
+    const CHART_COLORS = ['#6ee7b7','#818cf8','#fbbf24','#f87171','#34d399','#a78bfa','#fb923c'];
+    document.getElementById('noChartData').className = data.length ? 'hidden' : 'absolute inset-0 flex flex-col items-center justify-center rounded-2xl';
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    if (myChart) myChart.destroy();
+    myChart = new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? CHART_COLORS : ['#1e1e28'], borderWidth: 0 }] }, options: { responsive: true, plugins: { legend: { display: false } }, cutout: '72%', animation: { animateScale: true } } });
+    const total = data.reduce((a, b) => a + b, 0);
+    document.getElementById('categoryLegend').innerHTML = labels.map((l, i) =>
+        `<div class="flex justify-between items-center text-xs p-2 rounded-lg" style="background:var(--surface2);">
+            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${CHART_COLORS[i%CHART_COLORS.length]}"></span><span class="font-bold text-white">${l}</span></span>
+            <span class="mono font-bold text-white">$${catMap[l].toLocaleString()} <span style="color:var(--muted);">${total ? Math.round(catMap[l]/total*100) : 0}%</span></span>
+        </div>`
+    ).join('');
+    const exp = filtered.filter(t => t.type === 'expense'), bucks = { living: 0, savings: 0, investment: 0, entertainment: 0 };
+    exp.forEach(t => { const c = appData.categories.find(x => x.id === t.categoryId); if (c) bucks[c.bucket] = (bucks[c.bucket] || 0) + t.amount; });
+    const maxVal = Math.max(...Object.values(bucks), 1);
+    const BUCKET_INFO = { living: ['🏠 生活', 'var(--accent)'], savings: ['💰 儲蓄', 'var(--accent2)'], investment: ['📈 投資', 'var(--accent3)'], entertainment: ['🎮 娛樂', 'var(--danger)'] };
+    document.getElementById('bucketAnalysis').innerHTML = Object.entries(BUCKET_INFO).map(([k, [n, col]]) =>
+        `<div><div class="flex justify-between text-xs font-bold mb-1.5"><span style="color:var(--muted);">${n}</span><span class="mono" style="color:${col};">$${(bucks[k]||0).toLocaleString()}</span></div>
+        <div class="progress-track h-2"><div class="progress-fill h-2" style="background:${col};width:${bucks[k]>0?Math.round(bucks[k]/maxVal*100):0}%"></div></div></div>`
+    ).join('');
+}
+
+// ═══════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════
+function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); updateRatioTotal(); }
+function closeSettings() { closeModal('settingsModal'); }
+function updateRatioTotal() {
+    const sum = ['setLiving','setSavings','setInvest','setEnt'].reduce((s, id) => s + (parseInt(document.getElementById(id).value)||0), 0);
+    const el = document.getElementById('totalRatioDisplay');
+    el.textContent = `總計: ${sum}%`;
+    el.style.color = sum === 100 ? 'var(--accent)' : 'var(--danger)';
+}
+function saveSettings() {
+    const l = parseInt(document.getElementById('setLiving').value), s = parseInt(document.getElementById('setSavings').value), i = parseInt(document.getElementById('setInvest').value), e = parseInt(document.getElementById('setEnt').value);
+    if (l+s+i+e !== 100) return alert('比例總和必須是 100%！');
+    appData.allocation = { living: l, savings: s, investment: i, entertainment: e };
+    appData.milestoneTarget = parseInt(document.getElementById('setMilestone').value) || 100000;
+    saveData(); closeSettings(); refreshUI(); checkGoals(true);
+}
+function resetAllData() {
+    if (confirm('確定要重置所有資料嗎？這無法復原。')) { localStorage.removeItem('v16_life_finance'); location.reload(); }
+}
+function closeOnboarding() { appData.isFirstTime = false; saveData(); document.getElementById('onboardingModal').classList.add('hidden'); openSettings(); }
+</script>
 </body>
 </html>
-
-
