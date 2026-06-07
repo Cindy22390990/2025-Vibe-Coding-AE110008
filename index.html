@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>人生責任財務儀表板 V19</title>
+    <title>人生責任財務儀表板 V20</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -97,17 +97,18 @@
     <header class="shrink-0 px-5 pt-6 pb-4" style="background: linear-gradient(180deg, #ebdcd9 0%, #f3e9e6 100%); border-bottom: 1.5px solid var(--border);">
         <div class="flex justify-between items-center mb-4">
             <div>
-                <p class="text-[10px] font-bold uppercase tracking-widest mb-0.5 text-rose-800/60">個人與家庭責任管理系統</p>
-                <h1 class="text-lg font-black text-rose-950 flex items-center gap-1.5">Life Dashboard <span class="mono" style="color: var(--accent);">V19</span></h1>
+                <p class="text-[10px] font-bold uppercase tracking-widest mb-0.5 text-rose-800/60">現金流引擎重構版</p>
+                <h1 class="text-lg font-black text-rose-950 flex items-center gap-1.5">Life Dashboard <span class="mono" style="color: var(--accent);">V20</span></h1>
             </div>
             <button onclick="App.openSettings()" class="w-10 h-10 rounded-full flex items-center justify-center transition bg-white active:scale-90 shadow-sm" style="border: 1.5px solid var(--border);">
                 <span class="text-base">⚙️</span>
             </button>
         </div>
 
+        <!-- 總資產概覽 (Net Worth) -->
         <div class="card p-5 mb-3.5 glow-emerald">
             <div class="flex justify-between items-start mb-1">
-                <span class="text-xs font-bold uppercase tracking-widest text-rose-900/60">總資產 Net Worth</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-rose-900/60">系統總資產 Net Worth</span>
                 <span id="healthBadge" class="badge">計算中...</span>
             </div>
             <div class="mono text-3xl font-black text-rose-950 leading-none" id="totalAssetsHeader">$0</div>
@@ -119,20 +120,36 @@
             </div>
         </div>
 
-        <div class="card-inner p-3.5 flex items-center gap-3">
-            <div class="text-2xl shrink-0">⚡</div>
-            <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-center mb-1.5">
-                    <span class="text-xs font-bold text-rose-950">發薪日前生存模式</span>
-                    <span class="mono text-xs font-bold" id="survivalDaysLeft" style="color: var(--accent);">— 天</span>
+        <!-- 現金流引擎：三級生存雷達 -->
+        <div class="card-inner p-3.5 flex flex-col gap-3">
+            <div class="flex justify-between items-center px-1">
+                <div class="flex items-center gap-2.5">
+                    <div class="text-2xl shrink-0">⚡</div>
+                    <div>
+                        <span class="text-xs font-bold text-rose-950 block">發薪日前生存模式</span>
+                        <span class="text-[10px] text-rose-900/60 block" id="survPool">現金流池：$0</span>
+                    </div>
                 </div>
-                <div class="progress-track h-2">
-                    <div class="progress-fill h-2" id="survivalFill" style="background: var(--accent); width: 0%;"></div>
+                <div class="text-right shrink-0">
+                    <span class="mono text-lg font-black block" style="color: var(--accent);"><span class="text-xs">剩 </span><span id="survivalDaysLeft">—</span><span class="text-xs"> 天</span></span>
                 </div>
             </div>
-            <div class="text-right shrink-0">
-                <div class="mono text-base font-black" id="survivalDaily" style="color: var(--accent);">$—</div>
-                <div class="text-[10px] text-rose-900/60 mt-0.5">每日可用</div>
+            <div class="bg-white p-2.5 rounded-xl border border-rose-100 grid grid-cols-3 gap-2 text-center divide-x divide-rose-50 shadow-sm">
+                <div>
+                    <div class="text-[9px] font-bold text-emerald-700 mb-0.5">🟢 嚴格安全</div>
+                    <div class="mono text-sm font-black text-emerald-600" id="survSafe">$0</div>
+                </div>
+                <div>
+                    <div class="text-[9px] font-bold text-amber-600 mb-0.5">🟡 警戒標準</div>
+                    <div class="mono text-sm font-black text-amber-500" id="survWarn">$0</div>
+                </div>
+                <div>
+                    <div class="text-[9px] font-bold text-rose-600 mb-0.5">🔴 預支極限</div>
+                    <div class="mono text-sm font-black text-rose-600" id="survDanger">$0</div>
+                </div>
+            </div>
+            <div class="progress-track h-1.5 mt-0.5 mx-1">
+                <div class="progress-fill h-1.5" id="survivalFill" style="background: var(--accent); width: 0%;"></div>
             </div>
         </div>
     </header>
@@ -166,7 +183,7 @@
 
             <div>
                 <div class="flex justify-between items-center mb-2.5">
-                    <span class="text-xs font-bold uppercase tracking-widest text-rose-900/60 px-1">我的帳戶</span>
+                    <span class="text-xs font-bold uppercase tracking-widest text-rose-900/60 px-1">實體與數位帳戶</span>
                     <button onclick="App.openAccountModal()" class="text-xs font-bold px-3.5 py-1.5 rounded-full transition active:scale-95 bg-white shadow-sm" style="border: 1.5px solid var(--border); color: var(--accent);">＋ 管理</button>
                 </div>
                 <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1.5 w-full" id="accountListContainer"></div>
@@ -208,7 +225,7 @@
         <!-- TAB 2: 責任 -->
         <div id="view-resp" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
             <div class="card p-5 glow-indigo">
-                <p class="text-xs font-bold uppercase tracking-widest mb-1 text-rose-900/60">每月固定責任支出</p>
+                <p class="text-xs font-bold uppercase tracking-widest mb-1 text-rose-900/60">每月固定責任總計</p>
                 <div class="mono text-3xl font-black" id="respTotalMonthly" style="color: var(--accent2);">$0</div>
                 <p class="text-xs mt-1.5 text-rose-900/60">佔預估月薪比例： <span id="respPct" class="font-bold">0%</span></p>
             </div>
@@ -221,7 +238,7 @@
                         <input id="cfSalary" type="number" placeholder="38000" class="inp mono font-bold h-11" oninput="App.saveCashflowConfig()">
                     </div>
                     <div>
-                        <label class="block text-rose-900/80 mb-1.5">發薪日期 (每月幾號)</label>
+                        <label class="block text-rose-900/80 mb-1.5">發薪日期 (每月號碼)</label>
                         <input id="cfPayday" type="number" min="1" max="31" placeholder="5" class="inp mono font-bold h-11" oninput="App.saveCashflowConfig()">
                     </div>
                 </div>
@@ -345,8 +362,8 @@
 
             <div class="flex justify-between items-center px-1 pt-2">
                 <div>
-                    <h2 class="text-xs font-bold uppercase tracking-widest text-rose-900/60">🧱 跨年度防護里程碑金字塔</h2>
-                    <p class="text-[10px] text-rose-900/60 mt-0.5">層層把關，打牢跨年度安全底座</p>
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-rose-900/60">🧱 跨年度防護金字塔</h2>
+                    <p class="text-[10px] text-rose-900/60 mt-0.5">層層把關，打牢安全底座</p>
                 </div>
                 <button onclick="App.openGoalModal()" class="text-xs font-bold px-3.5 py-1.5 rounded-full transition active:scale-95 bg-white shadow-sm" style="border: 1.5px solid var(--border); color: var(--accent);">＋ 新增目標</button>
             </div>
@@ -459,6 +476,14 @@
             <input type="hidden" id="accId">
             <div class="space-y-4 mb-5 text-xs">
                 <div><label class="text-rose-900 mb-1.5 block font-bold">帳戶名稱</label><input id="accName" class="inp" placeholder="例: 主要薪轉戶"></div>
+                <div>
+                    <label class="text-rose-900 mb-1.5 block font-bold">屬性與用途 (隔離機制)</label>
+                    <select id="accType" class="inp">
+                        <option value="cashflow">💵 日常現金流 (參與每日生存額度計算)</option>
+                        <option value="saving">🛡️ 儲備與緊急預備金 (隔離帳戶不計入日常)</option>
+                        <option value="invest">📈 長期投資帳戶 (隔離帳戶不計入日常)</option>
+                    </select>
+                </div>
                 <div><label class="text-rose-900 mb-1.5 block font-bold">初始餘額</label><input id="accBalance" type="number" class="inp mono font-bold" placeholder="0"></div>
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -564,14 +589,15 @@
 <script>
 /**
  * ═══════════════════════════════════════
- * LIFE DASHBOARD V19 CORE
- * 架構升級：拔除 window.xxx，收斂狀態管理與商業邏輯，導入自訂通知取代原生 Alert
+ * LIFE DASHBOARD V20 CORE
+ * 重大架構升級：現金流引擎重構，引入帳戶用途隔離屬性 (cashflow/saving/invest)
+ * 解決了將儲蓄投資混入每日可用餘額的錯誤財務邏輯，並加入三級生存雷達
  * ═══════════════════════════════════════
  */
 const App = {
     // --- 1. State Management (資料與狀態) ---
     data: {
-        version: 19,
+        version: 20,
         transactions: [],
         accounts: [],
         categories: [],
@@ -593,7 +619,12 @@ const App = {
     constants: {
         ICONS: ['🍔','🍱','🍜','🚗','🚌','🛒','🎮','💡','📱','💊','🛍️','🎁','📈','💰','💵','🏥','🏋️','🏝️','💈','🎨','👨‍👩‍👧','🦷','🛡️','📋'],
         CHART_COLORS: ['#558771','#7173a3','#cca074','#d9756c','#a78bfa','#ec4899','#38bdf8', '#fbbf24', '#34d399', '#f87171'],
-        RESP_ICONS: { family: '👨‍👩‍👧', debt: '💳', insurance: '🛡️', subscription: '📱', other: '📌' }
+        RESP_ICONS: { family: '👨‍👩‍👧', debt: '💳', insurance: '🛡️', subscription: '📱', other: '📌' },
+        ACC_META: {
+            cashflow: { icon: '💵', color: 'text-emerald-700', bg: 'bg-emerald-100/60' },
+            saving: { icon: '🛡️', color: 'text-indigo-700', bg: 'bg-indigo-100/60' },
+            invest: { icon: '📈', color: 'text-amber-700', bg: 'bg-amber-100/60' }
+        }
     },
     charts: {
         category: null,
@@ -612,10 +643,15 @@ const App = {
     },
     loadData() {
         try {
-            const s = localStorage.getItem('v19_soft_finance_dash');
+            const s = localStorage.getItem('v19_soft_finance_dash'); // 沿用原本 key 以讀取舊資料
             if (s) {
                 const parsed = JSON.parse(s);
                 this.data = { ...this.data, ...parsed };
+                // 資料庫熱升級 (V19 -> V20)：舊帳戶如果沒有 type，強制預設為日常現金流
+                if (this.data.accounts) {
+                    this.data.accounts.forEach(a => { if (!a.type) a.type = 'cashflow'; });
+                }
+                
                 // 基礎結構防護
                 if (!this.data.accounts) this.data.accounts = [];
                 if (!this.data.transactions) this.data.transactions = [];
@@ -629,9 +665,12 @@ const App = {
         }
     },
     loadDefaults() {
+        // V20 預設加入屬性隔離帳戶
         this.data.accounts = [
-            { id: 'acc_1', name: '主要薪轉戶', initialBalance: 15000 },
-            { id: 'acc_2', name: '零錢包袋', initialBalance: 3000 }
+            { id: 'acc_1', name: '主要薪轉戶', type: 'cashflow', initialBalance: 15000 },
+            { id: 'acc_2', name: '零錢包袋', type: 'cashflow', initialBalance: 3000 },
+            { id: 'acc_3', name: '緊急預備金', type: 'saving', initialBalance: 50000 },
+            { id: 'acc_4', name: 'ETF投資', type: 'invest', initialBalance: 30000 }
         ];
         this.data.categories = [
             { id: 'c1', name: '餐飲', icon: '🍱', bucket: 'living' },
@@ -661,8 +700,15 @@ const App = {
             App.cache.balances[accId] = bal;
             return bal;
         },
+        // 總資產 (包含所有隔離的儲備與投資帳戶)
         totalAssets() {
             return App.data.accounts.reduce((sum, acc) => sum + this.accountBalance(acc.id), 0);
+        },
+        // 可支配現金流 (僅計算 type='cashflow' 的帳戶，V20 核心升級)
+        spendableCash() {
+            return App.data.accounts
+                .filter(a => a.type === 'cashflow')
+                .reduce((sum, a) => sum + this.accountBalance(a.id), 0);
         },
         activeResps() {
             const ym = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
@@ -687,7 +733,7 @@ const App = {
         }
     },
 
-    // --- 4. Custom UI Interactivity (No Alerts) ---
+    // --- 4. Custom UI Interactivity ---
     toast(msg, type = 'error') {
         const container = document.getElementById('toast-container');
         const el = document.createElement('div');
@@ -762,6 +808,7 @@ const App = {
         document.getElementById('accId').value = '';
         document.getElementById('accName').value = '';
         document.getElementById('accBalance').value = '';
+        document.getElementById('accType').value = 'cashflow';
         document.getElementById('btnDelAcc').classList.add('hidden');
     },
     editAccount(id) {
@@ -771,34 +818,36 @@ const App = {
         document.getElementById('accModalTitle').innerText = "編輯帳戶";
         document.getElementById('accId').value = acc.id;
         document.getElementById('accName').value = acc.name;
+        document.getElementById('accType').value = acc.type || 'cashflow';
         document.getElementById('accBalance').value = acc.initialBalance;
         document.getElementById('btnDelAcc').classList.remove('hidden');
     },
     saveAccount() {
         const id = document.getElementById('accId').value;
         const name = document.getElementById('accName').value.trim();
+        const type = document.getElementById('accType').value;
         const bal = parseInt(document.getElementById('accBalance').value) || 0;
         
         if (!name) return this.toast('請填寫帳戶名稱');
         
         if (id) {
             const acc = this.data.accounts.find(a => a.id === id);
-            if (acc) { acc.name = name; acc.initialBalance = bal; }
+            if (acc) { acc.name = name; acc.type = type; acc.initialBalance = bal; }
         } else {
-            this.data.accounts.push({ id: 'acc_' + Date.now().toString(36), name, initialBalance: bal });
+            this.data.accounts.push({ id: 'acc_' + Date.now().toString(36), name, type, initialBalance: bal });
         }
         
         this.saveData();
         this.closeModal('accountModal');
-        // 局部更新取代 refreshUI
         this.renderAccounts();
         this.updateAccountSelects();
         this.renderHeader();
+        this.renderSurvivalBar();
         this.toast('帳戶已儲存', 'success');
     },
     deleteAccountCurrent() {
         const id = document.getElementById('accId').value;
-        if (this.data.accounts.length <= 1) return this.toast('必須保留至少一個實體/數位儲備帳戶！');
+        if (this.data.accounts.length <= 1) return this.toast('必須保留至少一個帳戶！');
         if (this.data.transactions.some(t => t.accountId === id)) return this.toast("此帳戶已有交易紀錄！請先處理關聯明細。");
         
         this.confirm('確定要永久刪除此帳戶嗎？', () => {
@@ -808,6 +857,7 @@ const App = {
             this.renderAccounts();
             this.updateAccountSelects();
             this.renderHeader();
+            this.renderSurvivalBar();
             this.toast('帳戶已刪除', 'success');
         }, true);
     },
@@ -846,7 +896,6 @@ const App = {
         document.getElementById('amountInput').value = ''; 
         document.getElementById('noteInput').value = '';
         
-        // 局部更新
         this.renderTransactions();
         this.renderAccounts();
         this.renderHeader();
@@ -928,6 +977,7 @@ const App = {
         this.renderMilestone();
     },
     renderHeader() {
+        // V20: Total Assets = 所有帳戶總和
         const total = this.calc.totalAssets(); 
         const headerEl = document.getElementById('totalAssetsHeader');
         headerEl.textContent = '$' + total.toLocaleString(); 
@@ -955,10 +1005,15 @@ const App = {
         container.innerHTML = this.data.accounts.map(acc => {
             const bal = this.calc.accountBalance(acc.id);
             const col = bal < 0 ? 'var(--danger)' : 'var(--accent)';
+            const meta = this.constants.ACC_META[acc.type || 'cashflow'];
+            
             return `
-            <div onclick="App.editAccount('${acc.id}')" class="shrink-0 card p-4 w-32 cursor-pointer transition hover:border-slate-400 active:scale-95">
-                <p class="text-xs font-bold text-rose-900/60 truncate mb-1.5">${acc.name}</p>
-                <p class="mono text-base font-bold" style="color: ${col};">$${bal.toLocaleString()}</p>
+            <div onclick="App.editAccount('${acc.id}')" class="shrink-0 card p-3.5 w-36 cursor-pointer transition hover:border-slate-400 active:scale-95">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-xs font-bold text-rose-900/60 truncate flex-1 pr-1">${acc.name}</p>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded-md font-bold shrink-0 ${meta.bg} ${meta.color}">${meta.icon}</span>
+                </div>
+                <p class="mono text-base font-black" style="color: ${col};">$${bal.toLocaleString()}</p>
             </div>`;
         }).join('');
     },
@@ -972,14 +1027,10 @@ const App = {
     renderCategoryGrid() {
         const grid = document.getElementById('categoryGrid');
         if (!grid) return;
-        
-        // 過濾當前交易類型的可能 bucket
         let visibleCats = this.data.categories;
-        
         if (visibleCats.length && !visibleCats.some(c => c.id === this.ui.selectedCatId)) {
             this.ui.selectedCatId = visibleCats[0].id;
         }
-        
         grid.innerHTML = visibleCats.map(c => `
             <button onclick="App.ui.selectedCatId='${c.id}'; App.renderCategoryGrid()" class="flex flex-col items-center justify-center p-3.5 rounded-2xl border transition active:scale-95" style="${this.ui.selectedCatId===c.id?'background:var(--accent);color:#ffffff;border-color:var(--accent);':'background:var(--surface2);color:var(--muted);border-color:var(--border);'}">
                 <span class="text-xl mb-1">${c.icon}</span><span style="font-size:10px;font-weight:700;">${c.name}</span>
@@ -1011,19 +1062,39 @@ const App = {
         }).join('');
     },
     renderSurvivalBar() {
-        const payday = this.data.cashflow.payday || 5, total = this.calc.totalAssets(), now = new Date(), today = now.getDate();
+        // V20: 現金流引擎核心重構
+        const payday = this.data.cashflow.payday || 5;
+        const now = new Date(), today = now.getDate();
+        
         let daysLeft = today < payday ? payday - today : Math.ceil((new Date(now.getFullYear(), now.getMonth() + 1, payday) - now) / 86400000);
-        const daysInCycle = payday <= today ? (new Date(now.getFullYear(), now.getMonth() + 1, payday) - new Date(now.getFullYear(), now.getMonth(), payday)) / 86400000 : payday - 1;
-        const dailyBudget = daysLeft > 0 ? Math.floor(total / daysLeft) : 0;
+        if (daysLeft <= 0) daysLeft = 1; // 防禦除以零
         
-        document.getElementById('survivalDaysLeft').textContent = daysLeft + ' 天';
-        document.getElementById('survivalDaily').textContent = dailyBudget >= 0 ? '$' + dailyBudget.toLocaleString() : '透支 ⚠️';
-        document.getElementById('survivalFill').style.width = (daysInCycle > 0 ? Math.max(0, Math.min(100, ((daysInCycle - daysLeft) / daysInCycle) * 100)) : 0) + '%';
+        // 僅提取日常現金流帳戶 (濾除預備金與投資)
+        const spendableCash = this.calc.spendableCash();
+        document.getElementById('survPool').textContent = `日常池餘額：$${spendableCash.toLocaleString()}`;
+        document.getElementById('survivalDaysLeft').textContent = daysLeft;
         
-        const fill = document.getElementById('survivalFill'), daily = document.getElementById('survivalDaily');
-        if (dailyBudget < 0) { fill.style.background = 'var(--danger)'; daily.style.color = 'var(--danger)'; } 
-        else if (dailyBudget < 300) { fill.style.background = 'var(--accent3)'; daily.style.color = 'var(--accent3)'; } 
-        else { fill.style.background = 'var(--accent)'; daily.style.color = 'var(--accent)'; }
+        const monthlyResp = this.calc.monthlyRespTotal();
+        
+        // 🔴 危險預支：把可用現金流直接除以天數 (無理會未來固定扣款)
+        const dangerDaily = Math.floor(spendableCash / daysLeft);
+        
+        // 🟢 嚴格安全：預先把整個月的責任在虛擬池扣掉 (最保守的現金流算法)
+        const safeDaily = Math.floor(Math.max(0, spendableCash - monthlyResp) / daysLeft);
+        
+        // 🟡 警戒標準：假設本月部分帳單已出帳，責任預扣一半
+        const warnDaily = Math.floor(Math.max(0, spendableCash - (monthlyResp / 2)) / daysLeft);
+        
+        document.getElementById('survSafe').textContent = '$' + safeDaily.toLocaleString();
+        document.getElementById('survWarn').textContent = '$' + warnDaily.toLocaleString();
+        document.getElementById('survDanger').textContent = '$' + dangerDaily.toLocaleString();
+        
+        // 進度條：發薪日循環的視覺推進
+        const daysInCycle = payday <= today ? (new Date(now.getFullYear(), now.getMonth() + 1, payday) - new Date(now.getFullYear(), now.getMonth(), payday)) / 86400000 : 30;
+        const pct = Math.max(0, Math.min(100, ((daysInCycle - daysLeft) / daysInCycle) * 100));
+        const fill = document.getElementById('survivalFill');
+        fill.style.width = pct + '%';
+        fill.style.background = pct > 85 ? 'var(--danger)' : pct > 55 ? 'var(--accent3)' : 'var(--accent)';
     },
     
     // 責任與目標相關 Renders
@@ -1043,12 +1114,12 @@ const App = {
         });
         this.saveData(); this.closeModal('respModal'); 
         document.getElementById('respName').value = ''; document.getElementById('respMonthly').value = ''; 
-        this.renderRespList(); this.toast('固定責任已新增', 'success');
+        this.renderRespList(); this.renderSurvivalBar(); this.toast('固定責任已新增', 'success');
     },
     deleteResp(id) { 
         this.confirm('確定要移除此固定責任？', () => { 
             this.data.responsibilities = this.data.responsibilities.filter(r => r.id !== id); 
-            this.saveData(); this.renderRespList(); 
+            this.saveData(); this.renderRespList(); this.renderSurvivalBar(); 
         }, true); 
     },
     renderRespList() {
@@ -1093,10 +1164,11 @@ const App = {
         if (!container) return;
         if (!this.data.goals.length) { container.innerHTML = `<div class="text-center py-10 opacity-40"><p class="text-3xl mb-1">📐</p><p class="text-xs">尚未設定金字塔防衛目標</p></div>`; return; }
         
-        let pool = this.calc.totalAssets(); // 使用統一資產作為計算基底
+        // 金字塔以系統「總資產」來結算
+        let pool = this.calc.totalAssets(); 
         const processed = [...this.data.goals].sort((a,b) => a.tier - b.tier).map(g => {
             let currentSaved = pool > 0 ? Math.min(pool, g.target) : 0;
-            pool = pool > 0 ? pool - currentSaved : 0; // 模擬水流分配
+            pool = pool > 0 ? pool - currentSaved : 0; 
             return { ...g, currentSaved, progress: g.target > 0 ? (currentSaved / g.target) * 100 : 0, isCompleted: currentSaved >= g.target };
         });
         
@@ -1213,7 +1285,7 @@ const App = {
     },
     renderCfBreakdown(salary, savings) {
         const resp = this.calc.monthlyRespTotal();
-        const avgMonthlyExp = salary - resp - savings; // 回推平均開銷
+        const avgMonthlyExp = salary - resp - savings; 
         const rows = [
             { label: '💼 月度預估薪資', val: salary, color: 'var(--accent)', sign: '+' },
             { label: '📋 每月固定責任', val: resp, color: 'var(--accent2)', sign: '-' },
