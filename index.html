@@ -281,19 +281,19 @@
                     <div class="bg-indigo-50 rounded-xl p-3 border border-indigo-100 space-y-2 text-xs">
                         <div class="font-black text-indigo-800 mb-2 border-b border-indigo-200 pb-1">基於閒錢的分配建議：</div>
                         <div class="flex justify-between">
-                            <span class="text-indigo-700 font-bold">🏠 日常生活 (${this.data?.allocation?.living || 50}%)</span>
+                            <span class="text-indigo-700 font-bold" id="labelSuggestLiving">🏠 日常生活 (50%)</span>
                             <span class="mono font-black text-indigo-700" id="suggestLiving">$0</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-indigo-700 font-bold">💰 轉入儲蓄 (${this.data?.allocation?.savings || 20}%)</span>
+                            <span class="text-indigo-700 font-bold" id="labelSuggestSavings">💰 轉入儲蓄 (20%)</span>
                             <span class="mono font-black text-indigo-700" id="suggestSavings">$0</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-indigo-700 font-bold">📈 轉入投資 (${this.data?.allocation?.investment || 15}%)</span>
+                            <span class="text-indigo-700 font-bold" id="labelSuggestInvest">📈 轉入投資 (15%)</span>
                             <span class="mono font-black text-indigo-700" id="suggestInvest">$0</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-indigo-700 font-bold">🎮 娛樂花費 (${this.data?.allocation?.entertainment || 15}%)</span>
+                            <span class="text-indigo-700 font-bold" id="labelSuggestEnt">🎮 娛樂花費 (15%)</span>
                             <span class="mono font-black text-indigo-700" id="suggestEnt">$0</span>
                         </div>
                     </div>
@@ -510,7 +510,7 @@
         </div>
     </div>
 
-    <!-- 責任管理 Modals (V25 加入生命週期管理) -->
+    <!-- 責任管理 Modals -->
     <div id="respModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
         <div class="modal-box w-full max-w-xs p-6">
             <h3 class="text-lg font-black text-slate-900 text-center mb-4" id="respModalTitle">新增固定責任</h3>
@@ -603,11 +603,10 @@
 <script>
 /**
  * ═══════════════════════════════════════
- * LIFE DASHBOARD V25 CORE (Responsibility Lifecycle Engine)
- * 升級重點：
- * 1. 責任與家庭支援加入 start(開始) 與 end(結束) 週期。
- * 2. 支援「編輯 ✏️」功能，隨時更改金額、名稱或結束日期，無需刪除重設。
- * 3. 系統會根據「當前月份」自動過濾並顯示活躍的責任。
+ * LIFE DASHBOARD V25.1 CORE (Bugfix Edition)
+ * 修正了:
+ * 1. 帳戶新增後無法即時渲染的靜默錯誤 (補回 renderAccountOverview)。
+ * 2. 閒錢分配建議的 HTML 亂碼錯誤 (改用 JS 動態更新標籤與比例數字)。
  * ═══════════════════════════════════════
  */
 const App = {
@@ -733,7 +732,6 @@ const App = {
         }
     },
 
-    // V25 核心：週期過濾器
     getCurrentYm() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; },
     isItemActive(item, ym) {
         if (item.start && item.start > ym) return false;
@@ -762,7 +760,7 @@ const App = {
         },
         totalAssets() { return App.data.accounts.reduce((sum, acc) => sum + this.accountBalance(acc.id), 0); },
         spendableCash() { return App.data.accounts.filter(a => a.type === 'cashflow').reduce((sum, a) => sum + this.accountBalance(a.id), 0); },
-        monthlyRespTotal(ym) { // V25: 帶入 ym 動態計算
+        monthlyRespTotal(ym) {
             return App.getActiveResps(ym).reduce((s, r) => s + r.monthly, 0) + App.getActiveFam(ym).reduce((s, m) => s + m.monthlySupport, 0);
         }
     },
@@ -900,6 +898,31 @@ const App = {
         else { badge.textContent = '儲備待調 ⚖️'; badge.className = 'badge bg-amber-100 text-amber-800 border border-amber-200'; }
     },
     
+    // 修復: V25.1 補回遺失的渲染帳戶列表函數
+    renderAccountOverview() {
+        const container = document.getElementById('accountListContainer');
+        if (!container) return;
+        if (!this.data.accounts.length) { container.innerHTML = '<p class="text-xs text-slate-400 p-2 text-center">尚未設定任何帳戶</p>'; return; }
+        
+        container.innerHTML = this.data.accounts.map(acc => {
+            const bal = this.calc.accountBalance(acc.id);
+            const col = bal < 0 ? 'text-red-600' : 'text-slate-900';
+            const meta = this.constants.ACC_META[acc.type || 'cashflow'];
+            
+            return `
+            <div onclick="App.editAccount('${acc.id}')" class="card-inner p-3 cursor-pointer transition hover:bg-slate-50 flex items-center justify-between border-slate-200 bg-white">
+                <div class="flex items-center gap-3">
+                    <span class="text-lg w-8 h-8 rounded-lg flex items-center justify-center ${meta.bg}">${meta.icon}</span>
+                    <div>
+                        <p class="text-xs font-black text-slate-800">${acc.name}</p>
+                        <p class="text-[10px] font-bold text-slate-500 mt-0.5">${acc.type==='cashflow'?'日常':'隔離'}</p>
+                    </div>
+                </div>
+                <p class="mono text-base font-black ${col}">$${bal.toLocaleString()}</p>
+            </div>`;
+        }).join('');
+    },
+
     updateAccountSelects() {
         const h = this.data.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
         ['accountSelect', 'tfrFrom', 'tfrTo', 'payRespAccount'].forEach(id => {
@@ -951,7 +974,6 @@ const App = {
         const dangerDaily = Math.floor(spendableCash / daysLeft);
         const clearedIds = Object.keys(this.data.clearedResps[ym] || {});
         
-        // V25: 僅計算活躍的責任
         const unpaidRespTotal = this.getActiveResps(ym).filter(r => !clearedIds.includes(r.id)).reduce((s, r) => s + r.monthly, 0)
                               + this.getActiveFam(ym).filter(m => !clearedIds.includes(m.id)).reduce((s, m) => s + m.monthlySupport, 0);
 
@@ -968,6 +990,7 @@ const App = {
         fill.style.width = pct + '%'; fill.style.background = pct > 85 ? 'var(--danger)' : pct > 55 ? 'var(--accent3)' : 'var(--text)';
     },
 
+    // 修復: V25.1 動態更新閒錢分配標籤與比例
     calculateNetBudget() {
         const ym = this.getCurrentYm();
         const inputEl = document.getElementById('actualSalary');
@@ -976,18 +999,25 @@ const App = {
         else { this.data.actualSalary[ym] = parseInt(inputEl.value) || 0; this.saveData(); }
         
         const actualSalary = this.data.actualSalary[ym] || 0;
-        const totalFixed = this.calc.monthlyRespTotal(ym); // V25 動態計算當月總責任
+        const totalFixed = this.calc.monthlyRespTotal(ym); 
         const netAllocatable = Math.max(0, actualSalary - totalFixed);
         
         document.getElementById('calcSalaryAmount').textContent = '$' + actualSalary.toLocaleString();
         document.getElementById('totalFixedAmount').textContent = '-$' + totalFixed.toLocaleString();
         document.getElementById('netAllocatableAmount').textContent = '$' + netAllocatable.toLocaleString();
         
-        const lRatio = (this.data.allocation.living || 50) / 100, sRatio = (this.data.allocation.savings || 20) / 100, iRatio = (this.data.allocation.investment || 15) / 100, eRatio = (this.data.allocation.entertainment || 15) / 100;
-        document.getElementById('suggestLiving').textContent = '$' + Math.round(netAllocatable * lRatio).toLocaleString();
-        document.getElementById('suggestSavings').textContent = '$' + Math.round(netAllocatable * sRatio).toLocaleString();
-        document.getElementById('suggestInvest').textContent = '$' + Math.round(netAllocatable * iRatio).toLocaleString();
-        document.getElementById('suggestEnt').textContent = '$' + Math.round(netAllocatable * eRatio).toLocaleString();
+        const lVal = this.data.allocation.living || 50, sVal = this.data.allocation.savings || 20, iVal = this.data.allocation.investment || 15, eVal = this.data.allocation.entertainment || 15;
+        
+        // 動態更新文字標籤 (避免寫在 HTML 裡變成亂碼)
+        document.getElementById('labelSuggestLiving').textContent = `🏠 日常生活 (${lVal}%)`;
+        document.getElementById('labelSuggestSavings').textContent = `💰 轉入儲蓄 (${sVal}%)`;
+        document.getElementById('labelSuggestInvest').textContent = `📈 轉入投資 (${iVal}%)`;
+        document.getElementById('labelSuggestEnt').textContent = `🎮 娛樂花費 (${eVal}%)`;
+
+        document.getElementById('suggestLiving').textContent = '$' + Math.round(netAllocatable * (lVal / 100)).toLocaleString();
+        document.getElementById('suggestSavings').textContent = '$' + Math.round(netAllocatable * (sVal / 100)).toLocaleString();
+        document.getElementById('suggestInvest').textContent = '$' + Math.round(netAllocatable * (iVal / 100)).toLocaleString();
+        document.getElementById('suggestEnt').textContent = '$' + Math.round(netAllocatable * (eVal / 100)).toLocaleString();
     },
 
     clickPayResp(id, type, name, amount) {
@@ -1016,9 +1046,6 @@ const App = {
         this.saveData(); this.closeModal('payRespModal'); this.updateAllRenders(); this.toast('繳納成功，已寫入交易紀錄！', 'success');
     },
 
-    // ----------------------------------------------------
-    // 責任與家庭支援 CRUD (支援 V25 編輯與週期)
-    // ----------------------------------------------------
     openRespModal() { 
         document.getElementById('respModalTitle').innerText = "新增固定責任";
         document.getElementById('respId').value = ''; document.getElementById('respName').value = ''; document.getElementById('respMonthly').value = ''; 
@@ -1254,7 +1281,7 @@ const App = {
         exp.forEach(t => { const c = this.data.categories.find(x => x.id === t.categoryId); buckets[c ? c.bucket : 'living'] = (buckets[c ? c.bucket : 'living'] || 0) + t.amount; });
         
         const actualSalary = this.data.actualSalary[timeVal] || 0;
-        const totalFixed = this.calc.monthlyRespTotal(timeVal); // V25 動態算指定月份的歷史預算
+        const totalFixed = this.calc.monthlyRespTotal(timeVal); 
         const netAllocatable = Math.max(0, actualSalary - totalFixed);
         const livingBudget = Math.round(netAllocatable * (this.data.allocation.living / 100)), entBudget = Math.round(netAllocatable * (this.data.allocation.entertainment / 100));
         
@@ -1276,7 +1303,49 @@ const App = {
                 <div class="progress-track h-2 w-full border border-slate-200"><div class="progress-fill h-2" style="background:${isWarning ? 'var(--danger)' : info.color}; width:${pct}%"></div></div>
             </div>`;
         }).join('');
-    }
+    },
+
+    openCategoryManager() { this.openModal('categoryModal'); this.renderIconPicker(); this.renderCategoryListEdit(); },
+    renderIconPicker() {
+        const picker = document.getElementById('iconPicker'); if (!picker) return;
+        picker.innerHTML = this.constants.ICONS.map(i => `<div onclick="App.ui.selectedIcon='${i}';App.renderIconPicker()" class="text-center text-lg p-1.5 cursor-pointer rounded-xl transition border-2 ${this.ui.selectedIcon===i?'border-slate-800 bg-slate-100':'border-transparent'}" >${i}</div>`).join('');
+    },
+    renderCategoryListEdit() {
+        document.getElementById('categoryListEdit').innerHTML = this.data.categories.filter(c => c.id !== 'cat_resp_sys').map(c => `
+            <div class="flex justify-between items-center p-2 rounded-xl text-xs mb-2 bg-white border border-slate-200">
+                <div class="flex items-center gap-2"><span class="text-lg">${c.icon}</span><span class="font-black text-slate-800">${c.name}</span><span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-black">${c.bucket}</span></div>
+                <button onclick="App.deleteCategory('${c.id}')" class="text-slate-400 font-black text-lg px-2">×</button>
+            </div>`).join('');
+    },
+    addNewCategory() {
+        const name = document.getElementById('newCatName').value.trim(); if (!name) return this.toast('請輸入分類名稱');
+        this.data.categories.push({ id: 'cat_' + Date.now().toString(36), name, icon: this.ui.selectedIcon || '📝', bucket: document.getElementById('newCatBucket').value });
+        this.saveData(); document.getElementById('newCatName').value = ''; this.renderCategoryListEdit(); this.renderCategoryGrid();
+    },
+    deleteCategory(id) {
+        if (this.data.transactions.some(t => t.categoryId === id)) return this.toast('此分類已被使用，不可刪除！');
+        this.confirm('確定刪除此分類？', () => { this.data.categories = this.data.categories.filter(c => c.id !== id); if (this.ui.selectedCatId === id) this.ui.selectedCatId = this.data.categories.find(c=>c.id!=='cat_resp_sys')?.id || null; this.saveData(); this.renderCategoryListEdit(); this.renderCategoryGrid(); });
+    },
+
+    openSettings() { 
+        this.openModal('settingsModal'); document.getElementById('setUserName').value = this.data.userName; document.getElementById('setUserPassword').value = this.data.userPassword || '';
+        document.getElementById('cfPayday').value = this.data.cashflow.payday || 5; document.getElementById('setLiving').value = this.data.allocation.living || 50;
+        document.getElementById('setSavings').value = this.data.allocation.savings || 20; document.getElementById('setInvest').value = this.data.allocation.investment || 15;
+        document.getElementById('setEnt').value = this.data.allocation.entertainment || 15; this.updateRatioTotal(); 
+    },
+    closeSettings() { this.closeModal('settingsModal'); },
+    updateRatioTotal() {
+        const sum = ['setLiving', 'setSavings', 'setInvest', 'setEnt'].reduce((s, id) => s + (parseInt(document.getElementById(id).value) || 0), 0);
+        const el = document.getElementById('totalRatioDisplay'); if (el) { el.textContent = `總和: ${sum}%`; el.style.color = sum === 100 ? 'var(--text)' : 'var(--danger)'; }
+    },
+    saveSettings() {
+        const l = parseInt(document.getElementById('setLiving').value) || 0, s = parseInt(document.getElementById('setSavings').value) || 0, i = parseInt(document.getElementById('setInvest').value) || 0, e = parseInt(document.getElementById('setEnt').value) || 0;
+        if (l + s + i + e !== 100) return this.toast('分配比例加總必須為 100%');
+        this.data.userName = document.getElementById('setUserName').value.trim() || '我'; this.data.userPassword = document.getElementById('setUserPassword').value;
+        this.data.cashflow.payday = parseInt(document.getElementById('cfPayday').value) || 5; this.data.allocation = { living: l, savings: s, investment: i, entertainment: e }; 
+        this.saveData(); this.closeSettings(); this.updateAllRenders(); this.toast('系統設定已儲存', 'success');
+    },
+    resetAllData() { this.confirm('⚠️ 警告：將徹底清除所有歷史資料，無法復原。確認執行？', () => { localStorage.removeItem('v19_soft_finance_dash'); sessionStorage.removeItem('dashboard_authorized'); location.reload(); }); }
 };
 
 window.onload = () => App.init();
