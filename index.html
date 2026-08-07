@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>財務儀表板 V22</title>
+    <title>Life Dashboard V25</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,11 +15,11 @@
             --surface: #ffffff;      /* 卡片背景 */
             --surface2: #fdfaf9;     /* 內嵌區塊背景 */
             --border: #e7d5d1;       /* 邊框 */
-            --accent: #558771;       /* 鼠尾草綠 */
-            --accent2: #7173a3;      /* 霧霾藍紫 */
-            --accent3: #cca074;      /* 暖杏沙色 */
-            --danger: #d9756c;       /* 珊瑚粉紅 */
-            --text: #1a1a1a;         /* 深色文字 (高對比) */
+            --accent: #558771;       /* 鼠尾草綠 (生活) */
+            --accent2: #7173a3;      /* 霧霾藍紫 (責任/儲蓄) */
+            --accent3: #cca074;      /* 暖杏沙色 (投資/轉帳) */
+            --danger: #d9756c;       /* 珊瑚粉紅 (娛樂/超支) */
+            --text: #1c1412;         /* 極深可可色 (高對比) */
             --muted: #8c7672;        /* 藕灰色 */
         }
         * { box-sizing: border-box; }
@@ -34,95 +34,96 @@
         
         .card { background: var(--surface); border: 2px solid var(--border); border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(61, 44, 41, 0.04); }
         .card-inner { background: var(--surface2); border: 2px solid var(--border); border-radius: 16px; }
+        .glow-emerald { box-shadow: 0 8px 30px rgba(85, 135, 113, 0.08); }
+        .glow-indigo { box-shadow: 0 8px 30px rgba(113, 115, 163, 0.08); }
         
         .progress-track { background: #ebdcd9; border-radius: 99px; overflow: hidden; padding: 1px; }
         .progress-fill { border-radius: 99px; transition: width 0.8s ease-out; }
         
-        .modal-overlay { background: rgba(61, 44, 41, 0.55); backdrop-filter: blur(8px); }
-        .modal-box { background: #ffffff; border: 2px solid var(--border); border-radius: 28px; box-shadow: 0 20px 40px -5px rgba(61, 44, 41, 0.12); }
+        .modal-overlay { background: rgba(28, 20, 18, 0.55); backdrop-filter: blur(8px); }
+        .modal-box { background: #ffffff; border: 2px solid var(--border); border-radius: 28px; box-shadow: 0 20px 40px -5px rgba(28, 20, 18, 0.15); }
         .hidden { display: none !important; }
         
-        /* 嚴格控制輸入框邊界，避免破版 */
         .inp { 
             background: var(--surface2); border: 2px solid var(--border); color: var(--text); 
-            border-radius: 14px; padding: 12px 14px; width: 100%; outline: none; font-size: 14px; 
-            font-weight: 700; transition: all 0.25s ease;
-            max-width: 100%; min-width: 0; text-overflow: ellipsis;
+            border-radius: 14px; padding: 12px 14px; width: 100%; outline: none; font-size: 14px; font-weight: bold;
+            transition: all 0.25s ease; box-sizing: border-box; max-width: 100%; min-width: 0; text-overflow: ellipsis;
         }
-        .inp:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 12px rgba(85, 135, 113, 0.12); }
-        .inp::placeholder { color: #bcaaa6; font-weight: 500; }
-        
-        /* 高對比按鈕樣式 */
-        .btn-primary {
-            background: var(--accent); color: #ffffff; border: 2px solid #3c6352; font-weight: 900;
-        }
-        .btn-outline {
-            background: #ffffff; color: var(--text); border: 2px solid var(--border); font-weight: 900;
-        }
+        .inp:focus { border-color: var(--text); background: #ffffff; box-shadow: 0 0 0 3px rgba(28, 20, 18, 0.08); }
+        .inp::placeholder { color: #bcaaa6; font-weight: normal; }
         
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
-        .seg-active { background: var(--accent); color: #ffffff; border-radius: 10px; font-weight: bold; border: 2px solid #3c6352; }
-        
-        select option { background: #ffffff; color: var(--text); font-weight: 700; }
-        .badge { font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 99px; border: 1px solid rgba(0,0,0,0.1); }
-        .tier-locked-visual { opacity: 0.4; filter: grayscale(80%); pointer-events: none; }
+        .badge { font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 99px; letter-spacing: 0.05em; }
+        .tag { font-size: 10px; padding: 4px 10px; border-radius: 8px; font-weight: 900; letter-spacing: 0.03em; border: 1px solid currentColor; }
+        .tier-locked-visual { opacity: 0.4; filter: grayscale(80%); }
+
+        .btn-solid {
+            background: var(--surface2); color: var(--text); border: 2px solid var(--text);
+            font-weight: 900; transition: all 0.2s active:scale-95; box-shadow: 2px 2px 0px rgba(28, 20, 18, 0.15);
+        }
+        .btn-solid:active { box-shadow: 0px 0px 0px rgba(28, 20, 18, 0.15); transform: translate(2px, 2px); }
 
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
         .animate-shake { animation: shake 0.2s ease-in-out 2; }
         
-        /* 原生折疊面板美化 */
-        details > summary { list-style: none; cursor: pointer; }
-        details > summary::-webkit-details-marker { display: none; }
+        .accordion-content { transition: max-height 0.3s ease-out, opacity 0.3s ease-out; overflow: hidden; max-height: 0; opacity: 0; }
+        .accordion-content.open { max-height: 800px; opacity: 1; }
+        .accordion-icon { transition: transform 0.3s ease; }
+        .accordion-icon.open { transform: rotate(180deg); }
     </style>
 </head>
 <body class="h-screen flex flex-col max-w-md mx-auto overflow-hidden relative">
 
-    <!-- 全域 Toast 提示容器 -->
     <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none w-11/12 max-w-xs"></div>
 
-    <!-- 自訂 Confirm 彈窗 -->
     <div id="customConfirmModal" class="hidden fixed inset-0 modal-overlay z-[100] flex items-center justify-center p-6">
         <div class="modal-box w-full max-w-sm p-6 text-center transform transition-all">
             <div class="text-4xl mb-3" id="confirmIcon">⚠️</div>
-            <h3 class="text-base font-black text-rose-950 mb-2">系統確認</h3>
-            <p id="confirmMessage" class="text-xs text-rose-900/80 mb-6 font-bold"></p>
+            <h3 class="text-base font-black text-slate-900 mb-2">系統確認</h3>
+            <p id="confirmMessage" class="text-xs text-slate-600 mb-6 font-bold"></p>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="App.closeConfirm(false)" class="btn-outline py-3 text-sm rounded-xl transition active:scale-95">取消</button>
-                <button onclick="App.closeConfirm(true)" id="confirmOkBtn" class="py-3 text-sm font-black text-white rounded-xl transition active:scale-95 border-2 border-red-800" style="background: var(--danger);">確定執行</button>
+                <button onclick="App.closeConfirm(false)" class="py-3 text-sm rounded-xl btn-solid" style="border-color: var(--border); color: var(--muted); box-shadow: none;">取消</button>
+                <button onclick="App.closeConfirm(true)" id="confirmOkBtn" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確定執行</button>
             </div>
         </div>
     </div>
 
-    <!-- 1. 新手初始化畫面 (Onboarding) -->
-    <div id="onboardingModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-6 modal-overlay">
-        <div class="modal-box w-full max-w-sm p-8 text-center flex flex-col items-center">
-            <div class="text-5xl mb-4">👋</div>
-            <h2 class="text-xl font-black mb-2 text-rose-950">歡迎使用儀表板</h2>
-            <p class="text-xs text-rose-900/70 mb-6 font-bold">請設定您的專屬稱呼，<br>讓我們開始打造您的財務基地。</p>
-            <div class="w-full space-y-4 text-left">
+    <!-- 繳納責任確認彈窗 -->
+    <div id="payRespModal" class="hidden fixed inset-0 modal-overlay z-[70] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6 text-center">
+            <h3 class="text-lg font-black text-slate-900 mb-2">繳納固定責任</h3>
+            <p id="payRespDesc" class="text-xs text-slate-600 mb-5 font-bold"></p>
+            <div class="space-y-4 mb-5 text-left">
                 <div>
-                    <label class="text-[10px] font-bold text-rose-900 mb-1 block">您的稱呼 (必填)</label>
-                    <input id="onboardName" type="text" placeholder="例如：小明、Alice" class="inp" onkeypress="if(event.key==='Enter') document.getElementById('onboardPwd').focus()">
+                    <label class="text-slate-700 mb-1.5 block font-black text-xs">選擇付款帳戶</label>
+                    <select id="payRespAccount" class="inp text-sm pr-8"></select>
                 </div>
-                <div>
-                    <label class="text-[10px] font-bold text-rose-900 mb-1 block">設定專屬密碼 (選填，留白則不加密)</label>
-                    <input id="onboardPwd" type="password" placeholder="輸入密碼" class="inp" onkeypress="if(event.key==='Enter') App.saveOnboarding()">
-                </div>
-                <button onclick="App.saveOnboarding()" class="btn-primary w-full py-3.5 rounded-2xl text-sm mt-2 active:scale-95 transition">完成設定開始使用</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="App.closeModal('payRespModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button onclick="App.confirmPayResp()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確認扣款</button>
             </div>
         </div>
     </div>
 
-    <!-- 2. 鎖定畫面 -->
-    <div id="lockScreenModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 modal-overlay">
-        <div class="modal-box w-full max-w-sm p-8 text-center flex flex-col items-center">
-            <div class="text-5xl mb-4">🔑</div>
-            <h2 class="text-xl font-black mb-1 text-rose-950">專屬基地已鎖定</h2>
-            <p class="text-xs text-rose-900/70 mb-6 font-bold" id="lockScreenGreeting">請輸入您的密碼解鎖</p>
+    <div id="lockScreenModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 modal-overlay">
+        <div class="modal-box w-full max-w-sm p-8 flex flex-col">
+            <div class="text-center mb-6">
+                <div class="text-5xl mb-4">✨</div>
+                <h2 class="text-xl font-black mb-1 text-slate-900" id="welcomeTitle">歡迎使用儀表板</h2>
+                <p class="text-xs text-slate-500 font-bold" id="welcomeDesc">請完成簡單的初始設定</p>
+            </div>
             <div class="w-full space-y-4">
-                <input id="loginPassword" type="password" placeholder="請輸入密碼" class="inp text-center text-lg tracking-widest h-12" onkeypress="if(event.key==='Enter') App.verifyPassword()">
-                <p id="loginError" class="text-xs font-black text-red-500 hidden mt-1">⚠️ 密碼錯誤，請重新輸入</p>
-                <button onclick="App.verifyPassword()" class="btn-primary w-full py-3.5 rounded-2xl text-sm mt-2 active:scale-95 transition">授權解鎖</button>
+                <div id="setupNameArea">
+                    <label class="text-xs font-black text-slate-700 mb-1.5 block">怎麼稱呼您？(必填)</label>
+                    <input id="setupName" type="text" placeholder="您的名字或暱稱" class="inp text-center text-lg h-12" onkeypress="if(event.key==='Enter') document.getElementById('setupPassword').focus()">
+                </div>
+                <div>
+                    <label class="text-xs font-black text-slate-700 mb-1.5 block">專屬解鎖密碼 (選填)</label>
+                    <input id="setupPassword" type="password" placeholder="留白代表不設密碼" class="inp text-center text-lg tracking-widest h-12" onkeypress="if(event.key==='Enter') App.verifyPassword()">
+                </div>
+                <p id="loginError" class="text-xs font-bold text-red-600 hidden mt-1 text-center bg-red-50 py-1.5 rounded-lg border border-red-200">⚠️ 密碼驗證錯誤，請重新輸入</p>
+                <button onclick="App.verifyPassword()" class="w-full py-3.5 rounded-xl text-sm btn-solid mt-2" style="background: var(--accent); color: white; border-color: var(--text);">確認進入</button>
             </div>
         </div>
     </div>
@@ -131,59 +132,57 @@
     <header class="shrink-0 px-5 pt-6 pb-4" style="background: linear-gradient(180deg, #ebdcd9 0%, #f3e9e6 100%); border-bottom: 2px solid var(--border);">
         <div class="flex justify-between items-center mb-4">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest mb-0.5 text-rose-800/60">CASHFLOW ENGINE V22</p>
-                <h1 class="text-xl font-black text-rose-950 flex items-center gap-1.5" id="dashboardTitle">財務儀表板</h1>
+                <p class="text-[10px] font-black uppercase tracking-widest mb-0.5 text-slate-500">閒錢分配引擎 V25</p>
+                <h1 class="text-xl font-black text-slate-900 flex items-center gap-1.5"><span id="headerUserName">Life</span> Dashboard</h1>
             </div>
-            <button onclick="App.openSettings()" class="w-10 h-10 rounded-full flex items-center justify-center transition bg-white active:scale-90 shadow-sm border-2 border-rose-950 text-rose-950">
-                <span class="text-base">⚙️</span>
+            <button onclick="App.openSettings()" class="w-10 h-10 rounded-full flex items-center justify-center transition bg-white active:scale-90 border-2 border-slate-800 shadow-sm">
+                <span class="text-lg">⚙️</span>
             </button>
         </div>
 
-        <!-- 總資產概覽 (Net Worth) -->
-        <div class="card p-5 mb-3.5 bg-white border-2 border-emerald-900/20 shadow-md">
+        <div class="card p-5 mb-3.5 glow-emerald border-2 border-slate-800">
             <div class="flex justify-between items-start mb-1">
-                <span class="text-xs font-black uppercase tracking-widest text-emerald-900/60">系統總資產 Net Worth</span>
-                <span id="healthBadge" class="badge">計算中...</span>
+                <span class="text-xs font-black uppercase tracking-widest text-slate-600">系統總資產 Net Worth</span>
+                <span id="healthBadge" class="badge bg-slate-800 text-white border border-slate-900">計算中...</span>
             </div>
-            <div class="mono text-3xl font-black text-emerald-950 leading-none" id="totalAssetsHeader">$0</div>
-            <div class="flex gap-1.5 mt-4 flex-wrap">
-                <span class="badge text-emerald-800 bg-emerald-100">生活 <span id="hAllocLiving">0</span>%</span>
-                <span class="badge text-indigo-800 bg-indigo-100">儲蓄 <span id="hAllocSavings">0</span>%</span>
-                <span class="badge text-amber-800 bg-amber-100">投資 <span id="hAllocInvest">0</span>%</span>
-                <span class="badge text-rose-800 bg-rose-100">娛樂 <span id="hAllocEnt">0</span>%</span>
+            <div class="mono text-4xl font-black text-slate-900 leading-none tracking-tight" id="totalAssetsHeader">$0</div>
+            <div class="flex gap-2 mt-4 flex-wrap">
+                <span class="tag" style="background:rgba(85,135,113,0.15);color:var(--text);border-color:var(--accent)">生活 <span id="hAllocLiving">0</span>%</span>
+                <span class="tag" style="background:rgba(113,115,163,0.15);color:var(--text);border-color:var(--accent2)">儲蓄 <span id="hAllocSavings">0</span>%</span>
+                <span class="tag" style="background:rgba(204,160,116,0.15);color:var(--text);border-color:var(--accent3)">投資 <span id="hAllocInvest">0</span>%</span>
+                <span class="tag" style="background:rgba(217,117,108,0.15);color:var(--text);border-color:var(--danger)">娛樂 <span id="hAllocEnt">0</span>%</span>
             </div>
         </div>
 
-        <!-- 現金流引擎：三級生存雷達 -->
-        <div class="card-inner p-3.5 flex flex-col gap-3">
+        <div class="card-inner p-3.5 flex flex-col gap-3 border border-slate-300">
             <div class="flex justify-between items-center px-1">
                 <div class="flex items-center gap-2.5">
                     <div class="text-2xl shrink-0">⚡</div>
                     <div>
-                        <span class="text-xs font-black text-rose-950 block">發薪日前生存模式</span>
-                        <span class="text-[10px] font-bold text-rose-900/60 block" id="survPool">日常池餘額：$0</span>
+                        <span class="text-xs font-black text-slate-900 block">發薪日前生存模式</span>
+                        <span class="text-[10px] text-slate-500 font-bold block" id="survPool">現金流池：$0</span>
                     </div>
                 </div>
                 <div class="text-right shrink-0">
-                    <span class="mono text-lg font-black block text-emerald-700"><span class="text-xs font-bold text-rose-950">剩 </span><span id="survivalDaysLeft">—</span><span class="text-xs font-bold text-rose-950"> 天</span></span>
+                    <span class="mono text-lg font-black block" style="color: var(--accent);"><span class="text-xs text-slate-600">剩 </span><span id="survivalDaysLeft">—</span><span class="text-xs text-slate-600"> 天</span></span>
                 </div>
             </div>
-            <div class="bg-white p-2.5 rounded-xl border-2 border-rose-100 grid grid-cols-3 gap-2 text-center divide-x-2 divide-rose-50 shadow-sm">
+            <div class="bg-white p-2.5 rounded-xl border-2 border-slate-200 grid grid-cols-3 gap-2 text-center divide-x-2 divide-slate-100 shadow-sm">
                 <div>
-                    <div class="text-[9px] font-black text-emerald-700 mb-0.5">🟢 嚴格安全</div>
-                    <div class="mono text-sm font-black text-emerald-600" id="survSafe">$0</div>
+                    <div class="text-[9px] font-black text-slate-500 mb-0.5">🟢 嚴格安全</div>
+                    <div class="mono text-sm font-black text-emerald-700" id="survSafe">$0</div>
                 </div>
                 <div>
-                    <div class="text-[9px] font-black text-amber-600 mb-0.5">🟡 警戒標準</div>
-                    <div class="mono text-sm font-black text-amber-500" id="survWarn">$0</div>
+                    <div class="text-[9px] font-black text-slate-500 mb-0.5">🟡 警戒標準</div>
+                    <div class="mono text-sm font-black text-amber-600" id="survWarn">$0</div>
                 </div>
                 <div>
-                    <div class="text-[9px] font-black text-rose-600 mb-0.5">🔴 預支極限</div>
+                    <div class="text-[9px] font-black text-slate-500 mb-0.5">🔴 預支極限</div>
                     <div class="mono text-sm font-black text-rose-600" id="survDanger">$0</div>
                 </div>
             </div>
-            <div class="progress-track h-2 mt-0.5 mx-1 border border-rose-200">
-                <div class="progress-fill h-2" id="survivalFill" style="background: var(--accent); width: 0%;"></div>
+            <div class="progress-track h-2 mt-0.5 mx-1 border border-slate-200">
+                <div class="progress-fill h-2" id="survivalFill" style="background: var(--text); width: 0%;"></div>
             </div>
         </div>
     </header>
@@ -191,400 +190,453 @@
     <!-- Main Content -->
     <main class="flex-1 overflow-hidden relative" style="background: var(--bg);">
 
-        <!-- TAB 1: 記帳 (精簡首頁) -->
+        <!-- TAB 1: 記帳首頁 -->
         <div id="view-home" class="tab-content active h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
             
-            <!-- 帳戶管理捷徑 -->
-            <button onclick="App.openAccountModal()" class="w-full card p-3.5 flex justify-between items-center bg-white hover:bg-slate-50 transition active:scale-95 border-2 border-slate-300">
+            <div class="flex justify-between items-center mb-2 bg-white p-3 rounded-2xl border-2 border-slate-800 shadow-sm">
                 <div class="flex items-center gap-2">
                     <span class="text-xl">🏦</span>
-                    <span class="text-sm font-black text-slate-800">帳戶與餘額管理</span>
+                    <span class="text-sm font-black text-slate-900">實體與數位帳戶</span>
                 </div>
-                <span class="text-xs font-bold text-slate-500">點擊查看 ➔</span>
-            </button>
+                <button onclick="App.openAccountModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid text-white" style="background: var(--text); border-color: var(--text);">明細與管理</button>
+            </div>
 
-            <!-- 記帳主面板 -->
-            <div class="card p-5 space-y-4">
-                <div class="flex p-1 rounded-2xl bg-surface2 border-2 border-border">
-                    <button onclick="App.setTxType('expense')" id="btnExp" class="flex-1 py-2.5 text-sm rounded-xl transition font-black bg-emerald-600 text-white border-2 border-emerald-900">支出</button>
-                    <button onclick="App.setTxType('income')" id="btnInc" class="flex-1 py-2.5 text-sm rounded-xl transition font-bold text-slate-500 border-2 border-transparent">收入</button>
+            <div class="card p-5 space-y-4 border-2 border-slate-800">
+                <div class="flex p-1 rounded-2xl" style="background: var(--surface2); border: 2px solid var(--border);">
+                    <button onclick="App.setTxType('expense')" id="btnExp" class="flex-1 py-2.5 text-sm font-black rounded-xl transition" style="background: var(--accent); color: #ffffff; border: 2px solid var(--text);">支出</button>
+                    <button onclick="App.setTxType('income')" id="btnInc" class="flex-1 py-2.5 text-sm font-black rounded-xl transition border-2 border-transparent" style="color: var(--muted);">收入</button>
+                    <button onclick="App.setTxType('transfer')" id="btnTfr" class="flex-1 py-2.5 text-sm font-black rounded-xl transition border-2 border-transparent" style="color: var(--muted);">轉帳</button>
                 </div>
+                
                 <div class="space-y-3">
-                    <div class="grid grid-cols-2 gap-3">
-                        <select id="accountSelect" class="inp text-sm h-12"></select>
-                        <input id="noteInput" type="text" placeholder="備註（如: 午餐）" class="inp text-sm h-12" onkeypress="if(event.key==='Enter') App.addTransaction()">
+                    <div id="accountSelectArea" class="w-full">
+                        <select id="accountSelect" class="inp text-sm h-12 w-full"></select>
                     </div>
-                    <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 mono font-black text-rose-900/40 text-xl">$</span>
-                        <input id="amountInput" type="number" placeholder="0" class="inp mono text-3xl font-black pl-10 h-16 bg-white" onkeypress="if(event.key==='Enter') App.addTransaction()">
+                    <div id="transferAccountsArea" class="hidden flex items-center gap-2 w-full">
+                        <select id="tfrFrom" class="inp text-xs h-12 flex-1 px-2"></select>
+                        <span class="text-sm font-black text-slate-400">➡️</span>
+                        <select id="tfrTo" class="inp text-xs h-12 flex-1 px-2"></select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="relative col-span-1">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 mono font-black text-slate-400 text-lg">$</span>
+                            <input id="amountInput" type="number" placeholder="0" class="inp mono text-2xl font-black pl-8 h-12" style="color: var(--text);" onkeypress="if(event.key==='Enter') App.addTransaction()">
+                        </div>
+                        <div class="col-span-1">
+                            <input id="noteInput" type="text" placeholder="備註(可選)" class="inp text-sm h-12 w-full" onkeypress="if(event.key==='Enter') App.addTransaction()">
+                        </div>
                     </div>
                 </div>
-                <div>
+
+                <div id="categorySelectionArea">
                     <div class="flex justify-between items-center mb-2.5 px-1">
-                        <span class="text-xs font-black uppercase tracking-widest text-rose-900/60">分類項目</span>
-                        <button onclick="App.openCategoryManager()" class="text-[10px] font-black px-2.5 py-1 rounded-lg transition btn-outline">編輯分類 ⚙</button>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">分類項目</span>
+                        <button onclick="App.openCategoryManager()" class="text-[10px] font-black px-2 py-1 rounded-md transition border border-slate-300 text-slate-600 bg-white shadow-sm">編輯 ⚙</button>
                     </div>
                     <div id="categoryGrid" class="grid grid-cols-4 gap-2.5 w-full"></div>
                 </div>
-                <button onclick="App.addTransaction()" id="addBtn" class="w-full py-4 rounded-2xl text-sm transition active:scale-95 flex items-center justify-center gap-2 btn-primary shadow-sm text-white">
-                    <span class="text-lg">＋</span> <span id="addBtnText">記一筆支出</span>
+
+                <button onclick="App.addTransaction()" id="addBtn" class="w-full py-4 rounded-xl text-base btn-solid text-white" style="background: var(--accent);">
+                    <span id="addBtnText">新增支出</span>
                 </button>
             </div>
 
-            <!-- 近期明細 (僅顯示 7 天) -->
             <div>
-                <span class="text-xs font-black uppercase tracking-widest text-rose-900/60 px-1">最近 7 天紀錄</span>
+                <span class="text-xs font-black uppercase tracking-widest text-slate-500 px-1">最近 7 天紀錄</span>
                 <div id="transactionList" class="mt-2.5 space-y-2.5 w-full"></div>
             </div>
         </div>
 
-        <!-- TAB 2: 責任 (本月淨預算) -->
+        <!-- TAB 2: 責任與本月精算 (V25 生命週期版) -->
         <div id="view-resp" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
             
-            <!-- 本月資金水位試算器 -->
-            <div class="card p-5 bg-indigo-50 border-2 border-indigo-200">
-                <p class="text-xs font-black text-indigo-900 mb-3 flex items-center gap-1.5"><span class="text-base">🧮</span> 本月淨閒錢試算器</p>
+            <div class="card p-5 border-2 border-slate-800 glow-indigo" style="background: linear-gradient(135deg, #ffffff 0%, #fdfaf9 100%);">
+                <div class="flex justify-between items-center border-b-2 border-slate-100 pb-3 mb-4">
+                    <h2 class="text-sm font-black text-slate-900">💡 閒錢基數精算</h2>
+                    <span class="badge bg-indigo-100 text-indigo-800 border border-indigo-200">當前活躍責任</span>
+                </div>
+                
                 <div class="space-y-4">
                     <div>
-                        <label class="text-[10px] font-black text-indigo-800 mb-1 block">1. 輸入您本月實際入帳薪資</label>
-                        <input id="currentSalary" type="number" class="inp bg-white font-black text-lg h-12 text-indigo-950 border-indigo-300" placeholder="0" onkeyup="if(event.key==='Enter'){event.target.blur();} App.saveCashflowConfig()">
+                        <label class="text-xs font-black text-slate-700 block mb-1.5">本月實際入帳薪水 ($)</label>
+                        <input id="actualSalary" type="number" placeholder="請輸入實領薪資" class="inp mono font-black h-12 text-lg text-indigo-900 border-indigo-200 focus:border-indigo-500" oninput="App.calculateNetBudget()" onkeypress="if(event.key==='Enter') this.blur()">
                     </div>
-                    <div class="flex justify-between items-center text-xs font-black text-indigo-800 px-1">
-                        <span>2. 扣除下方尚未繳交之責任</span>
-                        <span id="calcTotalResp" class="mono text-sm text-rose-600">-$0</span>
+                    
+                    <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-slate-500">本月實領薪資</span>
+                            <span class="mono font-bold text-slate-900" id="calcSalaryAmount">$0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-slate-500">扣除：本月總活躍責任</span>
+                            <span class="mono font-bold text-rose-500" id="totalFixedAmount">-$0</span>
+                        </div>
+                        <div class="pt-2 mt-2 border-t border-slate-100 flex justify-between items-end">
+                            <span class="text-xs font-black text-indigo-900">✨ 扣除責任後可分配閒錢</span>
+                            <span class="mono text-2xl font-black text-indigo-700" id="netAllocatableAmount">$0</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between items-center pt-3 border-t-2 border-indigo-200/50 px-1">
-                        <span class="text-sm font-black text-indigo-950">🎉 本月剩餘可支配閒錢</span>
-                        <span id="calcFreeMoney" class="text-2xl font-black mono text-emerald-600">$0</span>
+
+                    <div class="bg-indigo-50 rounded-xl p-3 border border-indigo-100 space-y-2 text-xs">
+                        <div class="font-black text-indigo-800 mb-2 border-b border-indigo-200 pb-1">基於閒錢的分配建議：</div>
+                        <div class="flex justify-between">
+                            <span class="text-indigo-700 font-bold">🏠 日常生活 (${this.data?.allocation?.living || 50}%)</span>
+                            <span class="mono font-black text-indigo-700" id="suggestLiving">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-indigo-700 font-bold">💰 轉入儲蓄 (${this.data?.allocation?.savings || 20}%)</span>
+                            <span class="mono font-black text-indigo-700" id="suggestSavings">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-indigo-700 font-bold">📈 轉入投資 (${this.data?.allocation?.investment || 15}%)</span>
+                            <span class="mono font-black text-indigo-700" id="suggestInvest">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-indigo-700 font-bold">🎮 娛樂花費 (${this.data?.allocation?.entertainment || 15}%)</span>
+                            <span class="mono font-black text-indigo-700" id="suggestEnt">$0</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 待繳清單 -->
             <div>
-                <div class="flex justify-between items-center mb-2.5">
-                    <span class="text-xs font-black uppercase tracking-widest text-rose-900/60 px-1">本月責任清單 (打勾表示已結清)</span>
-                    <button onclick="App.openRespModal()" class="text-[10px] font-black px-3 py-1.5 rounded-full transition active:scale-95 btn-outline text-indigo-900 border-indigo-200">＋ 新增責任</button>
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <span class="text-xs font-black uppercase tracking-widest text-slate-500 px-1 block">本期活躍固定責任</span>
+                        <span class="text-[10px] text-slate-400 px-1 font-bold">打勾將自動寫入記帳明細</span>
+                    </div>
+                    <button onclick="App.openRespModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增</button>
                 </div>
                 <div id="respList" class="space-y-2.5 w-full"></div>
             </div>
-            
-            <!-- 責任建議分配 -->
-            <div class="card-inner p-4 bg-white mt-2">
-                <p class="text-xs font-black text-slate-800 mb-2 border-b-2 border-slate-100 pb-2">💡 依照您的比例，本月閒錢建議流向：</p>
-                <div id="adviseList" class="space-y-1.5 text-xs font-bold text-slate-600"></div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3 mt-6">
+                    <div>
+                        <span class="text-xs font-black uppercase tracking-widest text-slate-500 px-1 block">本期活躍家庭支援</span>
+                    </div>
+                    <button onclick="App.openFamilyModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增</button>
+                </div>
+                <div id="familyMemberList" class="space-y-2.5 w-full"></div>
             </div>
         </div>
 
-        <!-- TAB 3: 目標與預測 (整合摺疊) -->
-        <div id="view-predict" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
+        <!-- TAB 3: 未來預測與目標 -->
+        <div id="view-goals" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
             
-            <p class="text-xs font-black uppercase tracking-widest text-rose-900/60 px-1 text-center mb-2">長期戰略規劃</p>
-
-            <!-- 決策模擬器 (預設摺疊) -->
-            <details class="card bg-amber-50 border-2 border-amber-200 group">
-                <summary class="p-5 font-black text-sm text-amber-950 flex justify-between items-center">
-                    <span class="flex items-center gap-2">🔮 財務決策戰略模擬器</span>
-                    <span class="text-amber-700 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div class="p-5 pt-0 border-t-2 border-amber-200/30 mt-2 space-y-4">
-                    <div>
-                        <div class="flex justify-between text-xs font-black mb-1 text-amber-950">
-                            <span>模擬月薪調動：</span>
-                            <span class="mono" id="simSalaryVal">$38,000</span>
-                        </div>
-                        <input id="simSalarySlider" type="range" min="25000" max="100000" step="1000" value="38000" class="w-full accent-amber-600" oninput="App.runSimulate()">
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs font-black mb-1 text-amber-950">
-                            <span>模擬預期每日日常開銷：</span>
-                            <span class="mono" id="simDailyVal">$500</span>
-                        </div>
-                        <input id="simDailySlider" type="range" min="100" max="2000" step="50" value="500" class="w-full accent-amber-600" oninput="App.runSimulate()">
-                    </div>
-                    <div class="card-inner p-3.5 bg-white border-2 border-amber-100 text-xs font-bold space-y-2">
-                        <div class="flex justify-between items-center text-amber-900">
-                            <span>🎯 一年後儲備存款變化：</span>
-                            <span id="simDepositDelta" class="font-black text-sm mono">+$0</span>
-                        </div>
-                        <div class="flex justify-between items-center text-amber-900">
-                            <span>🧱 安全預備金達成：</span>
-                            <span id="simMilestoneTime" class="font-black text-amber-950">提前 0 個月</span>
-                        </div>
-                    </div>
-                </div>
-            </details>
-
-            <!-- 第一桶金與走勢 (預設展開) -->
-            <details class="card group" open>
-                <summary class="p-5 font-black text-sm text-rose-950 flex justify-between items-center border-b-2 border-border">
-                    <span class="flex items-center gap-2">📈 資產走勢與第一桶金</span>
-                    <span class="text-rose-700 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div class="p-5 space-y-4">
-                    <div class="flex justify-between items-start mb-1">
+            <div class="card border-2 border-slate-800 overflow-hidden">
+                <button onclick="App.toggleAccordion('acc-sim')" class="w-full p-4 flex justify-between items-center bg-white hover:bg-slate-50 transition">
+                    <span class="text-sm font-black text-slate-900">🔮 財務決策戰略模擬器</span>
+                    <span class="text-lg accordion-icon" id="icon-acc-sim">▼</span>
+                </button>
+                <div id="acc-sim" class="accordion-content bg-surface2 px-4 pb-4">
+                    <div class="space-y-4 pt-2">
                         <div>
-                            <p class="text-[10px] font-black uppercase tracking-widest mb-1 text-slate-500">🏆 第一桶金目標</p>
-                            <div class="mono text-2xl font-black text-rose-950" id="milestoneAmt">$100,000</div>
+                            <div class="flex justify-between text-xs font-black mb-1">
+                                <span class="text-slate-800">模擬月薪調動：</span>
+                                <span class="mono text-slate-900" id="simSalaryVal">$38,000</span>
+                            </div>
+                            <input id="simSalarySlider" type="range" min="25000" max="150000" step="1000" value="38000" class="w-full accent-slate-800" oninput="App.runSimulate()">
                         </div>
-                        <div class="text-right">
-                            <p class="text-[10px] font-black text-rose-900/60">預估達成</p>
-                            <p class="mono text-sm font-black text-emerald-700" id="milestoneDate">計算中…</p>
+                        <div>
+                            <div class="flex justify-between text-xs font-black mb-1">
+                                <span class="text-slate-800">模擬預期每日日常開銷：</span>
+                                <span class="mono text-slate-900" id="simDailyVal">$500</span>
+                            </div>
+                            <input id="simDailySlider" type="range" min="100" max="1500" step="50" value="500" class="w-full accent-slate-800" oninput="App.runSimulate()">
+                        </div>
+                        <div class="bg-white border-2 border-slate-200 p-3 rounded-xl text-xs space-y-2 mt-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-600 font-bold">🎯 一年後儲備存款增減：</span>
+                                <span id="simDepositDelta" class="font-black text-sm mono text-emerald-700">+$0</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="progress-track h-2.5 mb-2 border border-rose-200">
-                        <div class="progress-fill h-2.5" id="milestoneFill" style="background: var(--accent); width: 0%;"></div>
-                    </div>
-                    <div class="flex justify-between text-xs font-black text-rose-900/60">
-                        <span>目前進度： <span id="milestoneNow" class="mono text-rose-950">$0</span></span>
-                        <span id="milestonePct" style="color: var(--accent);">0%</span>
-                    </div>
-                    <p class="text-xs font-black uppercase tracking-widest text-rose-900/60 mt-4 border-t-2 border-slate-100 pt-4">未來 6 個月走勢預測</p>
-                    <div class="relative h-40 w-full"><canvas id="forecastChart"></canvas></div>
                 </div>
-            </details>
+            </div>
 
-            <!-- 金字塔防衛目標 (預設摺疊) -->
-            <details class="card bg-emerald-50 border-2 border-emerald-200 group">
-                <summary class="p-5 font-black text-sm text-emerald-950 flex justify-between items-center">
-                    <span class="flex items-center gap-2">🧱 跨年度防護金字塔</span>
-                    <span class="text-emerald-700 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div class="p-5 pt-0 mt-2 space-y-4">
-                    <div class="flex justify-end mb-2">
-                        <button onclick="App.openGoalModal()" class="text-[10px] font-black px-3 py-1.5 rounded-full transition active:scale-95 bg-white border-2 border-emerald-900 text-emerald-950 shadow-sm">＋ 新增目標</button>
+            <div class="card border-2 border-slate-800 overflow-hidden">
+                <button onclick="App.toggleAccordion('acc-pred')" class="w-full p-4 flex justify-between items-center bg-white hover:bg-slate-50 transition">
+                    <span class="text-sm font-black text-slate-900">📈 未來 6 個月資產走勢</span>
+                    <span class="text-lg accordion-icon" id="icon-acc-pred">▼</span>
+                </button>
+                <div id="acc-pred" class="accordion-content bg-surface2 px-4 pb-4">
+                    <div class="relative h-48 w-full pt-4">
+                        <canvas id="forecastChart"></canvas>
                     </div>
-                    <div id="pyramidGoalsContainer" class="space-y-4 w-full"></div>
                 </div>
-            </details>
+            </div>
+
+            <div class="flex justify-between items-center px-1 pt-2">
+                <div>
+                    <h2 class="text-xs font-black uppercase tracking-widest text-slate-600">🧱 跨年度防護金字塔</h2>
+                    <p class="text-[10px] text-slate-500 font-bold mt-0.5">層層把關，打牢安全底座</p>
+                </div>
+                <button onclick="App.openGoalModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增目標</button>
+            </div>
+            <div id="pyramidGoalsContainer" class="space-y-4 w-full"></div>
         </div>
 
         <!-- TAB 4: 報表 -->
         <div id="view-stats" class="tab-content h-full overflow-y-auto no-scrollbar px-4 pt-4 pb-28 space-y-4">
             
-            <!-- 報表時間與屬性選擇 -->
-            <div class="flex p-1 rounded-2xl bg-white shadow-sm w-full border-2 border-border">
-                <button onclick="App.changeStatPeriod('month')" id="btn-month" class="flex-1 py-2 text-xs font-black rounded-xl seg-active transition">月份</button>
-                <button onclick="App.changeStatPeriod('year')" id="btn-year" class="flex-1 py-2 text-xs font-black rounded-xl transition text-slate-500 border-2 border-transparent">年度</button>
-            </div>
-            
-            <div class="flex gap-2">
-                <select id="statTimeSelect" class="inp text-xs py-2 h-10 flex-1 font-black" onchange="App.updateCharts()"></select>
-                <select id="statTypeSelect" class="inp text-xs py-2 h-10 flex-1 font-black" onchange="App.updateCharts()">
-                    <option value="expense">支出分析</option>
-                    <option value="income">收入分析</option>
+            <div class="flex gap-2 w-full">
+                <select id="statTypeSelect" class="inp flex-1 text-xs h-10 py-1" onchange="App.updateTimeOptions()">
+                    <option value="month">📊 依月份查詢</option>
+                    <option value="year">📅 依年度查詢</option>
                 </select>
+                <select id="statTimeSelect" class="inp flex-[1.5] text-xs h-10 py-1" onchange="App.updateCharts()"></select>
             </div>
 
-            <!-- 圓餅圖 -->
-            <div class="card p-5 text-center relative w-full min-h-[250px]">
+            <div class="flex gap-4 border-b-2 pb-2 w-full border-slate-200">
+                <button onclick="App.toggleChartType('expense')" id="chartTypeExp" class="text-sm font-black pb-1.5 border-b-4 transition border-slate-800 text-slate-900">支出分析</button>
+                <button onclick="App.toggleChartType('income')" id="chartTypeInc" class="text-sm font-black pb-1.5 border-b-4 border-transparent transition text-slate-400">收入分析</button>
+            </div>
+
+            <div class="card p-5 text-center relative w-full border-2 border-slate-800" style="min-height: 280px;">
+                <p id="chartRangeLabel" class="text-xs font-black uppercase tracking-widest mb-4 text-slate-600">統計範圍</p>
                 <div class="relative w-3/5 mx-auto mb-4 h-40"><canvas id="categoryChart"></canvas></div>
                 <div id="categoryLegend" class="space-y-2 text-left w-full"></div>
-                <div id="noChartData" class="hidden absolute inset-0 flex flex-col items-center justify-center rounded-3xl bg-surface">
-                    <span class="text-4xl mb-2">📊</span>
-                    <span class="text-sm font-black text-rose-900/60">此期間尚無明細</span>
+                <div id="noChartData" class="hidden absolute inset-0 flex flex-col items-center justify-center rounded-[22px] bg-white z-10">
+                    <span class="text-4xl mb-2">🍃</span>
+                    <span class="text-sm font-black text-slate-500">此期間尚無交易明細</span>
                 </div>
             </div>
 
-            <!-- 預算流向分析 -->
-            <div class="card p-5 space-y-4 w-full bg-white">
-                <p class="text-xs font-black uppercase tracking-widest text-rose-900/60 border-b-2 border-slate-100 pb-2">屬性流向與淨預算追蹤</p>
-                <p class="text-[10px] font-bold text-slate-500 -mt-2 leading-relaxed">此進度條已自動扣除您本月的「固定/家庭責任」，顯示您<span class="text-emerald-700">真實可用淨預算</span>的消耗狀況。</p>
-                <div id="bucketAnalysis" class="space-y-4 w-full mt-2"></div>
+            <div class="card p-5 space-y-4 w-full border-2 border-slate-800">
+                <p class="text-xs font-black uppercase tracking-widest text-slate-600">本期屬性流向與預算追蹤</p>
+                <div id="bucketAnalysis" class="space-y-4 w-full"></div>
             </div>
         </div>
     </main>
 
     <!-- Bottom Nav -->
-    <nav class="shrink-0 pb-safe bg-white w-full border-t-2 border-border shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+    <nav class="shrink-0 pb-safe bg-white w-full border-t-2 border-slate-200 z-40">
         <div class="flex h-16 w-full justify-around items-center">
-            <button onclick="App.switchTab('view-home')" class="nav-btn active flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-home">
-                <div class="nav-icon w-9 h-9 rounded-xl flex items-center justify-center text-lg transition border-2 border-emerald-900 bg-emerald-600 text-white">📝</div>
-                <span class="nav-label text-[10px] font-black transition text-emerald-800">記帳</span>
+            <button onclick="App.switchTab('view-home')" class="nav-btn active flex-1 flex flex-col items-center justify-center gap-1" data-target="view-home">
+                <div class="nav-icon text-xl transition grayscale opacity-50">📝</div>
+                <span class="nav-label text-[10px] font-black transition text-slate-400">記帳</span>
             </button>
-            <button onclick="App.switchTab('view-resp')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-resp">
-                <div class="nav-icon w-9 h-9 rounded-xl flex items-center justify-center text-lg transition text-slate-400 border-2 border-transparent">📋</div>
+            <button onclick="App.switchTab('view-resp')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-resp">
+                <div class="nav-icon text-xl transition grayscale opacity-50">📋</div>
                 <span class="nav-label text-[10px] font-black transition text-slate-400">責任</span>
             </button>
-            <button onclick="App.switchTab('view-predict')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-predict">
-                <div class="nav-icon w-9 h-9 rounded-xl flex items-center justify-center text-lg transition text-slate-400 border-2 border-transparent">🎯</div>
+            <button onclick="App.switchTab('view-goals')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-goals">
+                <div class="nav-icon text-xl transition grayscale opacity-50">🔮</div>
                 <span class="nav-label text-[10px] font-black transition text-slate-400">目標</span>
             </button>
-            <button onclick="App.switchTab('view-stats')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-0.5" data-target="view-stats">
-                <div class="nav-icon w-9 h-9 rounded-xl flex items-center justify-center text-lg transition text-slate-400 border-2 border-transparent">📊</div>
+            <button onclick="App.switchTab('view-stats')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-stats">
+                <div class="nav-icon text-xl transition grayscale opacity-50">📊</div>
                 <span class="nav-label text-[10px] font-black transition text-slate-400">報表</span>
             </button>
         </div>
     </nav>
 
-    <!-- 所有的 Modals (彈窗) -->
-    
-    <!-- 全域系統設定 -->
-    <div id="settingsModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4" onclick="if(event.target === this) App.closeModal('settingsModal')">
+    <!-- 系統設定 Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
         <div class="modal-box w-full max-w-xs p-6 max-h-[85vh] flex flex-col">
-            <h3 class="text-lg font-black text-rose-950 text-center mb-4">⚙️ 偏好與系統設定</h3>
+            <h3 class="text-lg font-black text-slate-900 text-center mb-4">⚙️ 系統設定</h3>
             <div class="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-1">
-                
-                <!-- 個人資料 -->
-                <div class="card-inner p-4 space-y-3 bg-white">
-                    <p class="text-xs font-black uppercase tracking-widest text-rose-900/60 border-b-2 border-border pb-1.5">帳號設定</p>
-                    <div><label class="text-[10px] font-bold text-slate-600 block mb-1">修改稱呼</label><input id="setUserName" type="text" class="inp h-10 text-xs"></div>
-                    <div><label class="text-[10px] font-bold text-slate-600 block mb-1">修改密碼 (留白則不加密)</label><input id="setPwd" type="password" class="inp h-10 text-xs" placeholder="新密碼"></div>
+                <div class="card-inner p-4 space-y-3 bg-white border border-slate-200">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 pb-1.5">個人化設定</p>
+                    <input id="setUserName" type="text" class="inp h-10 text-sm" placeholder="您的稱呼">
+                    <input id="setUserPassword" type="text" class="inp h-10 text-sm" placeholder="自訂解鎖密碼(留白為不設)">
                 </div>
 
-                <!-- 分配比例 -->
-                <div class="card-inner p-4 space-y-3.5 bg-white">
-                    <p class="text-xs font-black uppercase tracking-widest text-rose-900/60 border-b-2 border-border pb-1.5">資產分配比例 (需為100%)</p>
-                    <div class="space-y-3 text-xs">
-                        <div class="flex justify-between items-center"><label class="font-black text-emerald-700">🏠 生活</label><input id="setLiving" type="number" class="inp w-20 text-center mono font-black h-10" oninput="App.updateRatioTotal()"></div>
-                        <div class="flex justify-between items-center"><label class="font-black text-indigo-700">💰 儲蓄</label><input id="setSavings" type="number" class="inp w-20 text-center mono font-black h-10" oninput="App.updateRatioTotal()"></div>
-                        <div class="flex justify-between items-center"><label class="font-black text-amber-700">📈 投資</label><input id="setInvest" type="number" class="inp w-20 text-center mono font-black h-10" oninput="App.updateRatioTotal()"></div>
-                        <div class="flex justify-between items-center"><label class="font-black text-rose-600">🎮 娛樂</label><input id="setEnt" type="number" class="inp w-20 text-center mono font-black h-10" oninput="App.updateRatioTotal()"></div>
-                        <div class="text-right text-xs font-black mono mt-2 pt-2 border-t-2 border-slate-100" id="totalRatioDisplay">100%</div>
+                <div class="card-inner p-4 space-y-3 bg-white border border-slate-200">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 pb-1.5">發薪設定</p>
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span>發薪日期 (每月號碼)</span>
+                        <input id="cfPayday" type="number" min="1" max="31" class="inp w-16 h-8 text-center text-xs py-1 px-1">
                     </div>
                 </div>
-                
-                <!-- 發薪日與第一桶金 -->
-                <div class="card-inner p-4 space-y-3 bg-white">
-                    <p class="text-xs font-black uppercase tracking-widest text-rose-900/60 border-b-2 border-border pb-1.5">核心參數</p>
-                    <div><label class="text-[10px] font-bold text-slate-600 block mb-1">發薪日期 (每月幾號)</label><input id="cfPayday" type="number" min="1" max="31" class="inp mono font-black h-10"></div>
-                    <div><label class="text-[10px] font-bold text-slate-600 block mb-1">第一桶金目標 ($)</label><input id="setMilestone" type="number" class="inp mono font-black h-10"></div>
+
+                <div class="card-inner p-4 space-y-3 bg-white border border-slate-200">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 pb-1.5">資產分配比例 (%)</p>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between items-center"><label class="font-bold text-emerald-700">🏠 生活</label><input id="setLiving" type="number" class="inp w-20 text-center mono font-bold h-8 py-1 px-1" oninput="App.updateRatioTotal()"></div>
+                        <div class="flex justify-between items-center"><label class="font-bold text-indigo-700">💰 儲蓄</label><input id="setSavings" type="number" class="inp w-20 text-center mono font-bold h-8 py-1 px-1" oninput="App.updateRatioTotal()"></div>
+                        <div class="flex justify-between items-center"><label class="font-bold text-amber-700">📈 投資</label><input id="setInvest" type="number" class="inp w-20 text-center mono font-bold h-8 py-1 px-1" oninput="App.updateRatioTotal()"></div>
+                        <div class="flex justify-between items-center"><label class="font-bold text-rose-600">🎮 娛樂</label><input id="setEnt" type="number" class="inp w-20 text-center mono font-bold h-8 py-1 px-1" oninput="App.updateRatioTotal()"></div>
+                        <div class="text-right text-xs font-black mono mt-2" id="totalRatioDisplay">100%</div>
+                    </div>
                 </div>
 
-                <div class="mt-2 pt-3 border-t-2 border-border">
-                    <button onclick="App.resetAllData()" class="w-full text-xs font-black py-3 rounded-xl transition hover:bg-red-50 text-red-600 border-2 border-red-200">⚠️ 重置所有系統資料</button>
+                <div class="mt-2 pt-3 border-t-2 border-slate-100">
+                    <button onclick="App.resetAllData()" class="w-full text-xs font-black py-2.5 rounded-xl transition bg-rose-50 text-rose-600 border border-rose-200">⚠️ 重置所有系統資料</button>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-3 mt-4 pt-4 shrink-0 border-t-2 border-border">
-                <button onclick="App.closeSettings()" class="btn-outline py-3 text-sm rounded-xl transition active:scale-95">取消</button>
-                <button onclick="App.saveSettings()" class="btn-primary py-3 text-sm rounded-xl transition active:scale-95">儲存設定</button>
+            <div class="grid grid-cols-2 gap-3 mt-4 pt-4 shrink-0 border-t-2 border-slate-100">
+                <button onclick="App.closeSettings()" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button onclick="App.saveSettings()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
             </div>
         </div>
     </div>
 
-    <!-- 帳戶管理彈窗 -->
-    <div id="accountModal" class="hidden fixed inset-0 modal-overlay z-[55] flex items-center justify-center p-4" onclick="if(event.target === this) App.closeModal('accountModal')">
-        <div class="modal-box w-full max-w-xs p-6 shadow-2xl relative">
-            <button onclick="App.closeModal('accountModal')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center font-black text-slate-400 bg-slate-100 rounded-full hover:text-slate-800">✕</button>
-            <h3 class="text-lg font-black text-rose-950 text-center mb-5 mt-2" id="accModalTitle">管理帳戶</h3>
-            
-            <!-- 已有帳戶列表 -->
-            <div id="accListInModal" class="space-y-2 mb-5 max-h-40 overflow-y-auto no-scrollbar border-b-2 border-border pb-4"></div>
+    <!-- 帳戶管理 Modals -->
+    <div id="accountOverviewModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-sm p-6 max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black text-slate-900">🏦 帳戶管理</h3>
+                <button onclick="App.openAccountEditModal()" class="text-xs font-black px-3 py-1.5 rounded-lg btn-solid bg-slate-800 text-white">＋ 新增</button>
+            </div>
+            <div id="accountListContainer" class="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1"></div>
+            <button onclick="App.closeModal('accountOverviewModal')" class="w-full mt-4 py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">關閉</button>
+        </div>
+    </div>
 
-            <h4 class="text-xs font-black text-slate-800 mb-3">新增/編輯帳戶</h4>
+    <div id="accountModal" class="hidden fixed inset-0 modal-overlay z-[60] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-5" id="accModalTitle">編輯帳戶</h3>
             <input type="hidden" id="accId">
             <div class="space-y-4 mb-5 text-xs">
-                <div><label class="text-rose-900 mb-1.5 block font-black">帳戶名稱</label><input id="accName" class="inp" placeholder="例: 薪轉戶" onkeypress="if(event.key==='Enter') document.getElementById('accBalance').focus()"></div>
+                <div><label class="text-slate-700 mb-1.5 block font-black">帳戶名稱</label><input id="accName" class="inp" placeholder="例: 主要薪轉戶"></div>
                 <div>
-                    <label class="text-rose-900 mb-1.5 block font-black">屬性 (隔離機制)</label>
-                    <select id="accType" class="inp">
-                        <option value="cashflow">💵 日常現金流 (計入每日生存)</option>
-                        <option value="saving">🛡️ 儲備預備金 (不計入日常)</option>
-                        <option value="invest">📈 投資帳戶 (不計入日常)</option>
+                    <label class="text-slate-700 mb-1.5 block font-black">屬性 (資金隔離機制)</label>
+                    <select id="accType" class="inp text-xs pr-8">
+                        <option value="cashflow">💵 日常現金流 (參與生存額度)</option>
+                        <option value="saving">🛡️ 儲備/預備金 (不計入日常)</option>
+                        <option value="invest">📈 長期投資 (不計入日常)</option>
                     </select>
                 </div>
-                <div><label class="text-rose-900 mb-1.5 block font-black">初始餘額</label><input id="accBalance" type="number" class="inp mono font-black" placeholder="0" onkeypress="if(event.key==='Enter') App.saveAccount()"></div>
+                <div><label class="text-slate-700 mb-1.5 block font-black">初始餘額</label><input id="accBalance" type="number" class="inp mono font-black" placeholder="0"></div>
             </div>
-            <button onclick="App.saveAccount()" class="btn-primary w-full py-3.5 text-sm rounded-xl active:scale-95 transition">儲存帳戶</button>
-            <button onclick="App.deleteAccountCurrent()" id="btnDelAcc" class="hidden w-full mt-3 py-2.5 text-xs font-black rounded-xl transition hover:bg-red-50 text-red-600 border-2 border-red-200">刪除此帳戶</button>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="App.closeModal('accountModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button onclick="App.saveAccount()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
+            </div>
+            <button onclick="App.deleteAccountCurrent()" id="btnDelAcc" class="hidden w-full mt-3 py-2.5 text-xs font-black rounded-xl transition bg-rose-50 text-rose-600 border border-rose-200">刪除此帳戶</button>
         </div>
     </div>
 
-    <!-- 責任管理彈窗 (整合固定與家庭) -->
-    <div id="respModal" class="hidden fixed inset-0 modal-overlay z-[55] flex items-center justify-center p-4" onclick="if(event.target === this) App.closeModal('respModal')">
-        <div class="modal-box w-full max-w-xs p-6 shadow-2xl">
-            <h3 class="text-lg font-black text-rose-950 text-center mb-5">新增每月責任</h3>
+    <!-- 責任管理 Modals (V25 加入生命週期管理) -->
+    <div id="respModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-4" id="respModalTitle">新增固定責任</h3>
+            <input type="hidden" id="respId">
             <div class="space-y-3.5 mb-5 text-xs">
-                <div><label class="text-rose-900 mb-1.5 block font-black">責任名稱</label><input id="respName" class="inp" placeholder="例：房租、給家裡" onkeypress="if(event.key==='Enter') document.getElementById('respMonthly').focus()"></div>
-                <div><label class="text-rose-900 mb-1.5 block font-black">每月固定支出金額 ($)</label><input id="respMonthly" type="number" class="inp mono font-black" placeholder="8000" onkeypress="if(event.key==='Enter') App.saveResp()"></div>
+                <div><label class="text-slate-700 mb-1 block font-black">項目名稱</label><input id="respName" class="inp" placeholder="例：牙套分期"></div>
+                <div><label class="text-slate-700 mb-1 block font-black">每月金額</label><input id="respMonthly" type="number" class="inp mono font-black" placeholder="8000"></div>
                 <div>
-                    <label class="text-rose-900 mb-1.5 block font-black">責任類型</label>
-                    <select id="respType" class="inp text-sm font-black">
-                        <option value="fixed">📌 固定生活開銷 (房租/水電)</option>
-                        <option value="family">👨‍👩‍👧 家庭支援 (孝親/家用)</option>
-                        <option value="debt">💳 債務分期 (學貸/醫美)</option>
+                    <label class="text-slate-700 mb-1 block font-black">責任類型</label>
+                    <select id="respType" class="inp text-sm pr-8">
+                        <option value="debt">💳 醫療/分期/學貸</option>
+                        <option value="insurance">🛡️ 保險保費</option>
                         <option value="subscription">📱 訂閱與學習</option>
+                        <option value="other">📌 其他</option>
                     </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">開始月份</label><input type="month" id="respStart" class="inp px-2 text-xs h-10"></div>
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">結束月份(可選)</label><input type="month" id="respEnd" class="inp px-2 text-xs h-10"></div>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="App.closeModal('respModal')" class="btn-outline py-3 text-sm rounded-xl transition active:scale-95">取消</button>
-                <button onclick="App.saveResp()" class="btn-primary py-3 text-sm rounded-xl active:scale-95 transition">確認新增</button>
+                <button onclick="App.closeModal('respModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button onclick="App.saveResp()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
             </div>
         </div>
     </div>
 
-    <!-- 分類管理彈窗 -->
-    <div id="categoryModal" class="hidden fixed inset-0 modal-overlay z-[55] flex items-center justify-center p-4" onclick="if(event.target === this) App.closeModal('categoryModal')">
-        <div class="modal-box w-full max-w-xs p-6 max-h-[85vh] flex flex-col shadow-2xl">
-            <h3 class="text-lg font-black text-rose-950 text-center mb-4">管理記帳分類</h3>
-            <div class="card-inner p-3.5 mb-4 flex-shrink-0 text-xs space-y-3 bg-white">
+    <div id="familyModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-base font-black text-slate-900 text-center mb-4" id="famModalTitle">設定家庭支援</h3>
+            <input type="hidden" id="famId">
+            <div class="space-y-3 mb-5 text-xs">
+                <div><label class="text-slate-700 mb-1 block font-black">成員/項目名稱</label><input id="famName" class="inp" placeholder="例: 孝親費"></div>
+                <div><label class="text-slate-700 mb-1 block font-black">每月金額 ($)</label><input id="famMonthly" type="number" class="inp mono font-black" placeholder="4000"></div>
+                <div class="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">開始月份</label><input type="month" id="famStart" class="inp px-2 text-xs h-10"></div>
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">結束月份(可選)</label><input type="month" id="famEnd" class="inp px-2 text-xs h-10"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="App.closeModal('familyModal')" class="py-2.5 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button onclick="App.saveFamilyMember()" class="py-2.5 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 其他 Modals -->
+    <div id="categoryModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6 max-h-[85vh] flex flex-col">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-4">管理分類</h3>
+            <div class="card-inner p-3.5 mb-4 flex-shrink-0 text-xs space-y-3 bg-white border border-slate-200">
                 <div class="grid grid-cols-6 gap-1.5 max-h-24 overflow-y-auto no-scrollbar mb-1" id="iconPicker"></div>
-                <input id="newCatName" class="inp text-sm" placeholder="分類名稱" onkeypress="if(event.key==='Enter') App.addNewCategory()">
-                <select id="newCatBucket" class="inp text-sm">
-                    <option value="living">🏠 生活</option>
-                    <option value="entertainment">🎮 娛樂</option>
-                    <option value="savings">💰 儲蓄</option>
-                    <option value="investment">📈 投資</option>
+                <input id="newCatName" class="inp text-sm" placeholder="分類名稱">
+                <select id="newCatBucket" class="inp text-xs pr-8">
+                    <option value="living">🏠 生活分配</option>
+                    <option value="entertainment">🎮 娛樂分配</option>
+                    <option value="savings">💰 儲蓄準備</option>
+                    <option value="investment">📈 長期投資</option>
                 </select>
-                <button onclick="App.addNewCategory()" class="btn-primary w-full py-3 text-xs rounded-xl transition">＋ 新增此分類</button>
+                <button onclick="App.addNewCategory()" class="w-full py-3 text-xs rounded-xl btn-solid text-white bg-slate-800">＋ 新增此分類</button>
             </div>
             <div id="categoryListEdit" class="space-y-2 overflow-y-auto flex-1 no-scrollbar pr-1 w-full"></div>
-            <button onclick="App.closeModal('categoryModal')" class="btn-outline w-full mt-4 py-3 text-sm rounded-xl flex-shrink-0 transition active:scale-95">完成</button>
+            <button onclick="App.closeModal('categoryModal')" class="w-full mt-4 py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">完成</button>
         </div>
     </div>
 
-    <!-- 金字塔目標彈窗 -->
-    <div id="goalModal" class="hidden fixed inset-0 modal-overlay z-[55] flex items-center justify-center p-4" onclick="if(event.target === this) App.closeModal('goalModal')">
-        <div class="modal-box w-full max-w-xs p-6 shadow-2xl">
-            <h3 class="text-lg font-black text-rose-950 text-center mb-5">新增防護目標</h3>
+    <div id="goalModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-5">新增防護目標</h3>
             <div class="space-y-4 mb-5 text-xs">
-                <div><label class="text-rose-900 mb-1.5 block font-black">目標名稱</label><input id="goalName" class="inp" placeholder="例:緊急預備金" onkeypress="if(event.key==='Enter') document.getElementById('goalAmount').focus()"></div>
-                <div><label class="text-rose-900 mb-1.5 block font-black">目標金額 ($)</label><input id="goalAmount" type="number" class="inp mono font-black" placeholder="50000" onkeypress="if(event.key==='Enter') App.saveGoal()"></div>
+                <div><label class="text-slate-700 mb-1.5 block font-black">目標項目名稱</label><input id="goalName" class="inp" placeholder="例:半年預備金"></div>
+                <div><label class="text-slate-700 mb-1.5 block font-black">目標金額</label><input id="goalAmount" type="number" class="inp mono font-black" placeholder="50000" onkeypress="if(event.key==='Enter') App.saveGoal()"></div>
                 <div>
-                    <label class="text-rose-900 mb-1.5 block font-black">防衛層級</label>
-                    <select id="goalTier" class="inp text-sm">
-                        <option value="1">🧱 第一層：安全預備金 (最優先)</option>
-                        <option value="2">🛡️ 第二層：家庭大額負擔 (中階)</option>
-                        <option value="3">🚀 第三層：夢想/積極成長 (高階)</option>
+                    <label class="text-slate-700 mb-1.5 block font-black">金字塔防衛層級</label>
+                    <select id="goalTier" class="inp text-xs pr-8">
+                        <option value="1">🧱 第一層：安全預備金 (先修)</option>
+                        <option value="2">🛡️ 第二層：大額負擔 (中階)</option>
+                        <option value="3">🚀 第三層：夢想成長 (高階)</option>
                     </select>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="App.closeModal('goalModal')" class="btn-outline py-3 text-sm rounded-xl transition active:scale-95">取消</button>
-                <button onclick="App.saveGoal()" class="btn-primary py-3 text-sm rounded-xl active:scale-95 transition">確認新增</button>
+                <button onclick="App.closeModal('goalModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button onclick="App.saveGoal()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確認</button>
             </div>
         </div>
     </div>
 
 <script>
-/** STREAMING_CHUNK:Initializing Core System & Data Structures... */
+/**
+ * ═══════════════════════════════════════
+ * LIFE DASHBOARD V25 CORE (Responsibility Lifecycle Engine)
+ * 升級重點：
+ * 1. 責任與家庭支援加入 start(開始) 與 end(結束) 週期。
+ * 2. 支援「編輯 ✏️」功能，隨時更改金額、名稱或結束日期，無需刪除重設。
+ * 3. 系統會根據「當前月份」自動過濾並顯示活躍的責任。
+ * ═══════════════════════════════════════
+ */
 const App = {
     data: {
-        version: 22,
-        userName: '',
-        usePassword: '', // Hashed password, empty means no password
+        version: 25,
+        userName: '我',
+        userPassword: '',
         transactions: [],
         accounts: [],
         categories: [],
-        responsibilities: [], // Merged fixed and family.
+        responsibilities: [],
         goals: [],
+        familyMembers: [],
         allocation: { living: 50, savings: 20, investment: 15, entertainment: 15 },
-        cashflow: { salary: 40000, payday: 5 },
-        milestoneTarget: 100000,
+        cashflow: { payday: 5 },
+        clearedResps: {}, 
+        actualSalary: {}  
     },
     ui: {
         selectedCatId: null,
         currentTxType: 'expense',
         selectedIcon: '🍔',
-        statPeriod: 'month',
-        statDateFilter: '', // "YYYY-MM" or "YYYY"
-        chartType: 'expense'
+        chartType: 'expense',
+        pendingResp: null 
     },
     constants: {
-        ICONS: ['🍔','🍱','🍜','🚗','🚌','🛒','🎮','💡','📱','💊','🛍️','🎁','📈','💰','💵','🏥','🏋️','🏝️','💈','🎨','👨‍👩‍👧','🦷','🛡️','📋'],
-        CHART_COLORS: ['#558771','#7173a3','#cca074','#d9756c','#38bdf8','#a78bfa','#ec4899','#fbbf24','#34d399','#f87171'],
-        RESP_ICONS: { fixed: '📌', family: '👨‍👩‍👧', debt: '💳', subscription: '📱' },
+        ICONS: ['🍔','🍱','🚗','🛒','🎮','💡','📱','💊','🛍️','🎁','📈','💰','💵','🏥','🏋️','🏝️','💈','🎨','👨‍👩‍👧','🦷','🛡️','🔄'],
+        CHART_COLORS: ['#7173a3','#558771','#cca074','#d9756c','#a78bfa','#ec4899','#38bdf8', '#fbbf24', '#34d399', '#f87171'],
+        RESP_ICONS: { debt: '💳', insurance: '🛡️', subscription: '📱', other: '📌' },
         ACC_META: {
             cashflow: { icon: '💵', color: 'text-emerald-800', bg: 'bg-emerald-100' },
             saving: { icon: '🛡️', color: 'text-indigo-800', bg: 'bg-indigo-100' },
@@ -594,544 +646,317 @@ const App = {
     charts: { category: null, forecast: null },
     cache: { balances: {} },
 
-    /** STREAMING_CHUNK:Loading and Initializing Logic... */
     init() {
         this.loadData();
-        
-        const now = new Date();
-        this.ui.statDateFilter = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-        
         this.checkAuth();
+        this.updateAllRenders();
+        this.checkGoals(false);
+        this.initTimeSelects();
     },
+
     loadData() {
         try {
-            const s = localStorage.getItem('v22_finance_dash_data') || localStorage.getItem('v19_soft_finance_dash');
+            const s = localStorage.getItem('v19_soft_finance_dash');
             if (s) {
                 const parsed = JSON.parse(s);
                 this.data = { ...this.data, ...parsed };
-                if (!this.data.accounts) this.data.accounts = [];
-                if (!this.data.transactions) this.data.transactions = [];
-                if (!this.data.categories) this.data.categories = [];
-                if (!this.data.responsibilities) this.data.responsibilities = [];
+                if (!this.data.actualSalary) this.data.actualSalary = {};
+                if (!this.data.clearedResps) this.data.clearedResps = {};
+                if (!this.data.categories.find(c => c.id === 'cat_resp_sys')) {
+                    this.data.categories.unshift({ id: 'cat_resp_sys', name: '固定責任', icon: '📋', bucket: 'responsibility' });
+                }
             } else {
                 this.loadDefaults();
+                document.getElementById('setupNameArea').classList.remove('hidden');
+                document.getElementById('lockScreenModal').classList.remove('hidden');
             }
         } catch (e) {
-            console.error(e);
+            console.error("資料載入失敗", e);
             this.loadDefaults();
         }
     },
     loadDefaults() {
         this.data.accounts = [
-            { id: 'acc_1', name: '主要現金流', type: 'cashflow', initialBalance: 15000 },
-            { id: 'acc_2', name: '緊急預備金', type: 'saving', initialBalance: 50000 }
+            { id: 'acc_1', name: '主要薪轉戶', type: 'cashflow', initialBalance: 15000 }
         ];
         this.data.categories = [
+            { id: 'cat_resp_sys', name: '固定責任', icon: '📋', bucket: 'responsibility' },
             { id: 'c1', name: '餐飲', icon: '🍱', bucket: 'living' },
-            { id: 'c2', name: '交通', icon: '🚌', bucket: 'living' },
+            { id: 'c2', name: '交通', icon: '🚗', bucket: 'living' },
             { id: 'c4', name: '娛樂', icon: '🎮', bucket: 'entertainment' },
-            { id: 'c5', name: '薪資入帳', icon: '💰', bucket: 'living' }
-        ];
-        this.data.responsibilities = [
-            { id: 'r1', name: '房租水電', monthly: 10000, type: 'fixed', paidMonths: [] }
+            { id: 'c5', name: '薪資', icon: '💰', bucket: 'living' }
         ];
         this.saveData();
     },
-    saveData() {
-        localStorage.setItem('v22_finance_dash_data', JSON.stringify(this.data));
-        this.cache.balances = {};
-    },
+    saveData() { localStorage.setItem('v19_soft_finance_dash', JSON.stringify(this.data)); this.cache.balances = {}; },
 
-    /** STREAMING_CHUNK:Authentication and Onboarding... */
     checkAuth() {
-        if (!this.data.userName) {
-            this.openModal('onboardingModal');
-            return;
-        }
-        if (this.data.usePassword && sessionStorage.getItem('dashboard_authorized') !== 'true') {
-            document.getElementById('lockScreenGreeting').textContent = `${this.data.userName}，歡迎回來`;
-            this.openModal('lockScreenModal');
-            return;
-        }
-        this.completeLogin();
-    },
-    saveOnboarding() {
-        const name = document.getElementById('onboardName').value.trim();
-        const pwd = document.getElementById('onboardPwd').value;
-        if (!name) return this.toast('請輸入您的稱呼！');
-        
-        this.data.userName = name;
-        this.data.usePassword = pwd ? btoa(pwd) : '';
-        this.saveData();
-        
-        this.closeModal('onboardingModal');
-        sessionStorage.setItem('dashboard_authorized', 'true');
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-        this.completeLogin();
-    },
-    verifyPassword() {
-        const pwd = document.getElementById('loginPassword').value;
-        const err = document.getElementById('loginError');
-        const box = document.getElementById('loginPassword').closest('.modal-box');
-        
-        if (btoa(pwd) === this.data.usePassword) {
-            err.classList.add('hidden');
+        if (sessionStorage.getItem('dashboard_authorized') === 'true') {
+            document.getElementById('lockScreenModal').classList.add('hidden');
+        } else if (this.data.userPassword && localStorage.getItem('v19_soft_finance_dash')) {
+            document.getElementById('setupNameArea').classList.add('hidden');
+            document.getElementById('welcomeTitle').textContent = `歡迎回來，${this.data.userName}`;
+            document.getElementById('welcomeDesc').textContent = "請輸入解鎖密碼";
+            document.getElementById('setupPassword').placeholder = "請輸入密碼";
+            document.getElementById('lockScreenModal').classList.remove('hidden');
+        } else if (!this.data.userPassword && localStorage.getItem('v19_soft_finance_dash')) {
+            document.getElementById('lockScreenModal').classList.add('hidden');
             sessionStorage.setItem('dashboard_authorized', 'true');
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            this.closeModal('lockScreenModal');
-            this.completeLogin();
-        } else {
-            err.classList.remove('hidden');
-            box.classList.add('animate-shake');
-            document.getElementById('loginPassword').value = '';
-            setTimeout(() => box.classList.remove('animate-shake'), 400);
         }
     },
-    completeLogin() {
-        document.getElementById('dashboardTitle').textContent = `${this.data.userName}的財務儀表板`;
-        // Load Settings Data
-        document.getElementById('setUserName').value = this.data.userName;
-        document.getElementById('setLiving').value = this.data.allocation.living;
-        document.getElementById('setSavings').value = this.data.allocation.savings;
-        document.getElementById('setInvest').value = this.data.allocation.investment;
-        document.getElementById('setEnt').value = this.data.allocation.entertainment;
-        document.getElementById('cfPayday').value = this.data.cashflow.payday;
-        document.getElementById('setMilestone').value = this.data.milestoneTarget;
-        
-        this.updateAllRenders();
-        this.checkGoals(false);
-    },
 
-    /** STREAMING_CHUNK:Core UI Utilities... */
-    toast(msg, type = 'error') {
-        const container = document.getElementById('toast-container');
-        const el = document.createElement('div');
-        el.className = `px-4 py-3 rounded-xl text-sm font-black shadow-lg transform transition-all duration-300 translate-y-[-20px] opacity-0 text-center border-2 ${type === 'error' ? 'bg-red-200 text-red-900 border-red-900' : 'bg-emerald-200 text-emerald-900 border-emerald-900'}`;
-        el.textContent = msg;
-        container.appendChild(el);
-        requestAnimationFrame(() => el.classList.remove('translate-y-[-20px]', 'opacity-0'));
-        setTimeout(() => {
-            el.classList.add('opacity-0', 'scale-95');
-            setTimeout(() => el.remove(), 300);
-        }, 3000);
-    },
-    _confirmCb: null,
-    confirm(msg, cb, isDanger = false) {
-        document.getElementById('confirmMessage').innerHTML = msg;
-        const btn = document.getElementById('confirmOkBtn');
-        btn.style.background = isDanger ? 'var(--danger)' : 'var(--accent)';
-        btn.style.borderColor = isDanger ? '#7f1d1d' : '#064e3b';
-        this._confirmCb = cb;
-        this.openModal('customConfirmModal');
-    },
-    closeConfirm(res) {
-        this.closeModal('customConfirmModal');
-        if (res && this._confirmCb) this._confirmCb();
-        this._confirmCb = null;
-    },
-    openModal(id) { document.getElementById(id).classList.remove('hidden'); },
-    closeModal(id) { document.getElementById(id).classList.add('hidden'); },
-    switchTab(id) {
-        document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            const isActive = btn.dataset.target === id; 
-            btn.classList.toggle('active', isActive);
-            const icon = btn.querySelector('.nav-icon'), label = btn.querySelector('.nav-label');
-            if (isActive) { 
-                icon.className = "nav-icon w-9 h-9 rounded-xl flex items-center justify-center text-lg transition border-2 border-emerald-900 bg-emerald-600 text-white";
-                label.className = "nav-label text-[10px] font-black transition text-emerald-800";
-            } else { 
-                icon.className = "nav-icon w-9 h-9 rounded-xl flex items-center justify-center text-lg transition text-slate-400 border-2 border-transparent";
-                label.className = "nav-label text-[10px] font-black transition text-slate-400";
+    verifyPassword() {
+        const isFirstTime = !localStorage.getItem('v19_soft_finance_dash');
+        const nameInput = document.getElementById('setupName').value.trim();
+        const pwInput = document.getElementById('setupPassword').value;
+        const errorEl = document.getElementById('loginError');
+        const modalBox = document.getElementById('setupPassword').closest('.modal-box');
+
+        if (isFirstTime) {
+            if (!nameInput) {
+                errorEl.textContent = "⚠️ 請輸入您的稱呼"; errorEl.classList.remove('hidden');
+                modalBox.classList.add('animate-shake'); setTimeout(() => modalBox.classList.remove('animate-shake'), 400); return;
             }
-        });
-        if (id === 'view-stats') this.updateCharts();
-        if (id === 'view-predict') this.runSimulate();
+            this.data.userName = nameInput; this.data.userPassword = pwInput; 
+            this.saveData(); sessionStorage.setItem('dashboard_authorized', 'true');
+            errorEl.classList.add('hidden'); this.closeModal('lockScreenModal');
+            this.updateAllRenders(); confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+        } else {
+            if (pwInput === this.data.userPassword) {
+                sessionStorage.setItem('dashboard_authorized', 'true');
+                errorEl.classList.add('hidden'); this.closeModal('lockScreenModal');
+            } else {
+                errorEl.textContent = "⚠️ 密碼驗證錯誤，請重新輸入"; errorEl.classList.remove('hidden');
+                modalBox.classList.add('animate-shake'); document.getElementById('setupPassword').value = '';
+                setTimeout(() => modalBox.classList.remove('animate-shake'), 400);
+            }
+        }
     },
 
-    /** STREAMING_CHUNK:Calculations & Financial Logic... */
+    // V25 核心：週期過濾器
+    getCurrentYm() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; },
+    isItemActive(item, ym) {
+        if (item.start && item.start > ym) return false;
+        if (item.end && item.end < ym) return false;
+        return true;
+    },
+    getActiveResps(ym) { return this.data.responsibilities.filter(r => this.isItemActive(r, ym)); },
+    getActiveFam(ym) { return (this.data.familyMembers || []).filter(m => this.isItemActive(m, ym)); },
+
     calc: {
         accountBalance(accId) {
             if (App.cache.balances[accId] !== undefined) return App.cache.balances[accId];
             const acc = App.data.accounts.find(a => a.id === accId);
             if (!acc) return 0;
-            const bal = App.data.transactions.filter(t => t.accountId === accId).reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), acc.initialBalance);
+            const bal = App.data.transactions.reduce((sum, t) => {
+                if (t.type === 'income' && t.accountId === accId) return sum + t.amount;
+                if (t.type === 'expense' && t.accountId === accId) return sum - t.amount;
+                if (t.type === 'transfer') {
+                    if (t.accountId === accId) return sum - t.amount;
+                    if (t.targetAccountId === accId) return sum + t.amount;
+                }
+                return sum;
+            }, acc.initialBalance);
             App.cache.balances[accId] = bal;
             return bal;
         },
-        totalAssets() { return App.data.accounts.reduce((s, a) => s + this.accountBalance(a.id), 0); },
-        spendableCash() { return App.data.accounts.filter(a => a.type === 'cashflow').reduce((s, a) => s + this.accountBalance(a.id), 0); },
-        
-        // V22 Net Budgeting Core
-        currentMonthKey() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; },
-        totalMonthlyResps() { return App.data.responsibilities.reduce((s, r) => s + r.monthly, 0); },
-        unpaidResps() { 
-            const m = this.currentMonthKey();
-            return App.data.responsibilities.filter(r => !r.paidMonths || !r.paidMonths.includes(m)).reduce((s, r) => s + r.monthly, 0);
+        totalAssets() { return App.data.accounts.reduce((sum, acc) => sum + this.accountBalance(acc.id), 0); },
+        spendableCash() { return App.data.accounts.filter(a => a.type === 'cashflow').reduce((sum, a) => sum + this.accountBalance(a.id), 0); },
+        monthlyRespTotal(ym) { // V25: 帶入 ym 動態計算
+            return App.getActiveResps(ym).reduce((s, r) => s + r.monthly, 0) + App.getActiveFam(ym).reduce((s, m) => s + m.monthlySupport, 0);
         }
     },
 
-    /** STREAMING_CHUNK:Accounts Management... */
-    openAccountModal() {
-        this.openModal('accountModal');
-        this.renderAccountsInModal();
-        document.getElementById('accId').value = ''; document.getElementById('accName').value = '';
-        document.getElementById('accBalance').value = ''; document.getElementById('accType').value = 'cashflow';
-        document.getElementById('btnDelAcc').classList.add('hidden');
-        document.getElementById('accModalTitle').textContent = "管理帳戶";
+    toast(msg, type = 'error') {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `px-4 py-3 rounded-xl text-xs font-black shadow-lg transform transition-all duration-300 translate-y-[-20px] opacity-0 text-center border-2 border-slate-900 ${type === 'error' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`;
+        el.textContent = msg; container.appendChild(el);
+        requestAnimationFrame(() => el.classList.remove('translate-y-[-20px]', 'opacity-0'));
+        setTimeout(() => { el.classList.add('opacity-0', 'scale-95'); setTimeout(() => el.remove(), 300); }, 3000);
     },
-    renderAccountsInModal() {
-        const list = document.getElementById('accListInModal');
-        list.innerHTML = this.data.accounts.map(a => `
-            <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg border-2 border-slate-200">
-                <span class="text-xs font-black text-slate-800">${a.name}</span>
-                <button onclick="App.editAccount('${a.id}')" class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-md border border-emerald-300">編輯</button>
-            </div>
-        `).join('');
+    _confirmCallback: null,
+    confirm(msg, callback) { document.getElementById('confirmMessage').innerHTML = msg; this._confirmCallback = callback; document.getElementById('customConfirmModal').classList.remove('hidden'); },
+    closeConfirm(result) { document.getElementById('customConfirmModal').classList.add('hidden'); if (result && typeof this._confirmCallback === 'function') this._confirmCallback(); this._confirmCallback = null; },
+    openModal(id) { document.getElementById(id).classList.remove('hidden'); },
+    closeModal(id) { document.getElementById(id).classList.add('hidden'); },
+    toggleAccordion(id) { document.getElementById(id).classList.toggle('open'); document.getElementById('icon-' + id).classList.toggle('open'); },
+
+    switchTab(id) {
+        document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+        if (document.getElementById(id)) document.getElementById(id).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            const isActive = btn.dataset.target === id; 
+            btn.classList.toggle('active', isActive);
+            const icon = btn.querySelector('.nav-icon'), label = btn.querySelector('.nav-label');
+            if (isActive) { icon.classList.remove('grayscale', 'opacity-50'); label.classList.remove('text-slate-400'); label.classList.add('text-slate-900'); } 
+            else { icon.classList.add('grayscale', 'opacity-50'); label.classList.remove('text-slate-900'); label.classList.add('text-slate-400'); }
+        });
+        if (id === 'view-stats') { this.initTimeSelects(); this.updateCharts(); }
+        if (id === 'view-goals') { this.runSimulate(); }
     },
+
+    openAccountOverviewModal() { this.openModal('accountOverviewModal'); this.renderAccountOverview(); },
+    openAccountEditModal() {
+        this.openModal('accountModal'); document.getElementById('accModalTitle').innerText = "新增帳戶";
+        document.getElementById('accId').value = ''; document.getElementById('accName').value = ''; document.getElementById('accBalance').value = '';
+        document.getElementById('accType').value = 'cashflow'; document.getElementById('btnDelAcc').classList.add('hidden');
+    },
+    openAccountModal() { this.openAccountOverviewModal(); },
     editAccount(id) {
-        const acc = this.data.accounts.find(a => a.id === id);
-        if (!acc) return;
-        document.getElementById('accId').value = acc.id;
-        document.getElementById('accName').value = acc.name;
-        document.getElementById('accType').value = acc.type || 'cashflow';
-        document.getElementById('accBalance').value = acc.initialBalance;
+        const acc = this.data.accounts.find(a => a.id === id); if (!acc) return;
+        this.openModal('accountModal'); document.getElementById('accModalTitle').innerText = "編輯帳戶";
+        document.getElementById('accId').value = acc.id; document.getElementById('accName').value = acc.name;
+        document.getElementById('accType').value = acc.type || 'cashflow'; document.getElementById('accBalance').value = acc.initialBalance;
         document.getElementById('btnDelAcc').classList.remove('hidden');
-        document.getElementById('accModalTitle').textContent = "編輯帳戶";
     },
     saveAccount() {
         const id = document.getElementById('accId').value, name = document.getElementById('accName').value.trim();
         const type = document.getElementById('accType').value, bal = parseInt(document.getElementById('accBalance').value) || 0;
         if (!name) return this.toast('請填寫帳戶名稱');
-        
-        if (id) {
-            const acc = this.data.accounts.find(a => a.id === id);
-            if (acc) { acc.name = name; acc.type = type; acc.initialBalance = bal; }
-        } else {
-            this.data.accounts.push({ id: 'acc_' + Date.now(), name, type, initialBalance: bal });
-        }
-        this.saveData();
+        if (id) { const acc = this.data.accounts.find(a => a.id === id); if (acc) { acc.name = name; acc.type = type; acc.initialBalance = bal; } } 
+        else { this.data.accounts.push({ id: 'acc_' + Date.now().toString(36), name, type, initialBalance: bal }); }
+        this.saveData(); this.closeModal('accountModal'); this.renderAccountOverview(); this.updateAccountSelects(); this.updateAllRenders();
         this.toast('帳戶已儲存', 'success');
-        this.openAccountModal(); // Refresh modal list
-        this.updateAllRenders();
     },
     deleteAccountCurrent() {
         const id = document.getElementById('accId').value;
-        if (this.data.accounts.length <= 1) return this.toast('需保留至少一組帳戶！');
-        if (this.data.transactions.some(t => t.accountId === id)) return this.toast("此帳戶有交易紀錄不可刪除！");
-        this.confirm('確定永久刪除此帳戶？', () => {
-            this.data.accounts = this.data.accounts.filter(a => a.id !== id);
-            this.saveData(); this.toast('已刪除', 'success');
-            this.openAccountModal();
-            this.updateAllRenders();
-        }, true);
+        if (this.data.accounts.length <= 1) return this.toast('必須保留至少一個帳戶！');
+        if (this.data.transactions.some(t => t.accountId === id || t.targetAccountId === id)) return this.toast("此帳戶已有交易紀錄！");
+        this.confirm('確定要永久刪除此帳戶嗎？', () => {
+            this.data.accounts = this.data.accounts.filter(a => a.id !== id); this.saveData(); this.closeModal('accountModal'); this.renderAccountOverview(); this.updateAccountSelects(); this.updateAllRenders(); this.toast('帳戶已刪除', 'success');
+        });
     },
 
-    /** STREAMING_CHUNK:Transactions Logic... */
     setTxType(type) {
         this.ui.currentTxType = type;
-        const isExp = type === 'expense';
-        document.getElementById('btnExp').className = isExp ? "flex-1 py-2.5 text-sm rounded-xl transition font-black bg-emerald-600 text-white border-2 border-emerald-900" : "flex-1 py-2.5 text-sm rounded-xl transition font-bold text-slate-500 border-2 border-transparent";
-        document.getElementById('btnInc').className = !isExp ? "flex-1 py-2.5 text-sm rounded-xl transition font-black bg-indigo-600 text-white border-2 border-indigo-900" : "flex-1 py-2.5 text-sm rounded-xl transition font-bold text-slate-500 border-2 border-transparent";
-        document.getElementById('addBtnText').textContent = isExp ? '記一筆支出' : '記一筆收入';
-        document.getElementById('addBtn').className = isExp ? "w-full py-4 rounded-2xl text-sm transition active:scale-95 flex items-center justify-center gap-2 btn-primary shadow-sm text-white" : "w-full py-4 rounded-2xl text-sm transition active:scale-95 flex items-center justify-center gap-2 bg-indigo-600 border-2 border-indigo-900 shadow-sm text-white font-black";
-        this.renderCategoryGrid();
+        const isExp = type === 'expense', isInc = type === 'income', isTfr = type === 'transfer';
+        document.getElementById('btnExp').style.cssText = isExp ? 'background:var(--accent);color:#ffffff;border:2px solid var(--text);' : 'color:var(--muted);background:transparent;border:2px solid transparent;';
+        document.getElementById('btnInc').style.cssText = isInc ? 'background:var(--accent2);color:#ffffff;border:2px solid var(--text);' : 'color:var(--muted);background:transparent;border:2px solid transparent;';
+        document.getElementById('btnTfr').style.cssText = isTfr ? 'background:var(--accent3);color:#ffffff;border:2px solid var(--text);' : 'color:var(--muted);background:transparent;border:2px solid transparent;';
+        
+        document.getElementById('addBtnText').textContent = isExp ? '新增支出' : (isInc ? '新增收入' : '執行轉帳');
+        document.getElementById('addBtn').style.background = isExp ? 'var(--accent)' : (isInc ? 'var(--accent2)' : 'var(--accent3)');
+        document.getElementById('accountSelectArea').classList.toggle('hidden', isTfr);
+        document.getElementById('transferAccountsArea').classList.toggle('hidden', !isTfr);
+        document.getElementById('categorySelectionArea').classList.toggle('hidden', isTfr);
+        if (!isTfr) this.renderCategoryGrid();
     },
     addTransaction() {
-        if (!this.data.accounts.length) return this.toast('請先建立帳戶！');
+        if (this.data.accounts.length === 0) return this.toast('請先建立帳戶才能記帳喔！');
         const amt = parseInt(document.getElementById('amountInput').value);
-        if (isNaN(amt) || amt <= 0) return this.toast('請輸入正確金額！');
-        const accId = document.getElementById('accountSelect').value;
-        if (!accId) return this.toast('請選擇帳戶！');
+        if (isNaN(amt) || amt <= 0) return this.toast('請輸入大於 0 的正確金額！');
         
-        const cat = this.data.categories.find(c => c.id === this.ui.selectedCatId);
-        this.data.transactions.unshift({
-            id: 'tx_' + Date.now(), amount: amt, type: this.ui.currentTxType, categoryId: this.ui.selectedCatId,
-            accountId: accId, note: document.getElementById('noteInput').value.trim() || (cat ? cat.name : '未分類'),
-            date: new Date().toISOString()
-        });
+        const type = this.ui.currentTxType;
+        let accId, targetAccId = null, note, catId = null;
+
+        if (type === 'transfer') {
+            accId = document.getElementById('tfrFrom').value; targetAccId = document.getElementById('tfrTo').value;
+            if (!accId || !targetAccId) return this.toast('請選擇轉出與轉入帳戶！');
+            if (accId === targetAccId) return this.toast('轉出與轉入不可為同一個帳戶！');
+            note = document.getElementById('noteInput').value.trim() || '資金轉帳';
+        } else {
+            accId = document.getElementById('accountSelect').value; if (!accId) return this.toast('請選擇一個帳戶！');
+            const catFallback = this.data.categories.find(c => c.id === this.ui.selectedCatId);
+            catId = this.ui.selectedCatId; note = document.getElementById('noteInput').value.trim() || (catFallback ? catFallback.name : '未分類');
+        }
+        
+        this.data.transactions.unshift({ id: 'tx_' + Date.now().toString(36), amount: amt, type, categoryId: catId, accountId: accId, targetAccountId: targetAccId, note, date: new Date().toISOString() });
         this.saveData();
+        
         document.getElementById('amountInput').value = ''; document.getElementById('noteInput').value = '';
-        this.toast('記帳成功', 'success');
-        this.updateAllRenders();
-        setTimeout(() => this.checkGoals(true), 300);
+        this.updateAllRenders(); this.toast(type === 'transfer' ? '轉帳成功' : '記帳成功', 'success'); setTimeout(() => this.checkGoals(true), 300);
     },
     deleteTrans(id) {
-        this.confirm('確定刪除此交易紀錄？', () => {
+        this.confirm('確定刪除此交易記錄？', () => {
             this.data.transactions = this.data.transactions.filter(t => t.id !== id);
-            this.saveData(); this.toast('紀錄已刪除', 'success');
-            this.updateAllRenders();
-        }, true);
-    },
-
-    /** STREAMING_CHUNK:Category Management... */
-    openCategoryManager() { this.openModal('categoryModal'); this.renderIconPicker(); this.renderCategoryListEdit(); },
-    renderIconPicker() {
-        document.getElementById('iconPicker').innerHTML = this.constants.ICONS.map(i => 
-            `<div onclick="App.ui.selectedIcon='${i}';App.renderIconPicker()" class="text-center text-lg p-1.5 cursor-pointer rounded-xl transition border-2 ${this.ui.selectedIcon===i?'border-emerald-600 bg-emerald-100':'border-transparent'}">${i}</div>`
-        ).join('');
-    },
-    renderCategoryListEdit() {
-        document.getElementById('categoryListEdit').innerHTML = this.data.categories.map(c => `
-            <div class="flex justify-between items-center p-2.5 rounded-xl text-xs mb-2 bg-surface2 border-2 border-border">
-                <div class="flex items-center gap-2"><span>${c.icon}</span><span class="font-black text-rose-950">${c.name}</span><span class="text-[9px] bg-rose-200 text-rose-800 px-2 py-0.5 rounded-full font-bold">${c.bucket}</span></div>
-                <button onclick="App.deleteCategory('${c.id}')" class="text-red-600 font-black text-base hover:bg-red-100 px-2 rounded">✕</button>
-            </div>`).join('');
-    },
-    addNewCategory() {
-        const name = document.getElementById('newCatName').value.trim();
-        if (!name) return this.toast('輸入分類名稱');
-        this.data.categories.push({ id: 'cat_' + Date.now(), name, icon: this.ui.selectedIcon || '📝', bucket: document.getElementById('newCatBucket').value });
-        this.saveData(); document.getElementById('newCatName').value = ''; 
-        this.renderCategoryListEdit(); this.renderCategoryGrid();
-    },
-    deleteCategory(id) {
-        if (this.data.transactions.some(t => t.categoryId === id)) return this.toast('此分類已被使用！');
-        this.confirm('刪除此分類？', () => {
-            this.data.categories = this.data.categories.filter(c => c.id !== id);
-            if (this.ui.selectedCatId === id) this.ui.selectedCatId = this.data.categories.length ? this.data.categories[0].id : null;
-            this.saveData(); this.renderCategoryListEdit(); this.renderCategoryGrid();
-        }, true);
-    },
-
-    /** STREAMING_CHUNK:Settings & Preferences... */
-    openSettings() { this.openModal('settingsModal'); this.updateRatioTotal(); },
-    closeSettings() { this.closeModal('settingsModal'); },
-    updateRatioTotal() {
-        const sum = ['setLiving', 'setSavings', 'setInvest', 'setEnt'].reduce((s, id) => s + (parseInt(document.getElementById(id).value) || 0), 0);
-        const el = document.getElementById('totalRatioDisplay'); 
-        if (el) { el.textContent = `比例總和: ${sum}%`; el.style.color = sum === 100 ? 'var(--accent)' : 'var(--danger)'; }
-    },
-    saveSettings() {
-        const n = document.getElementById('setUserName').value.trim();
-        const pwd = document.getElementById('setPwd').value;
-        const l = parseInt(document.getElementById('setLiving').value)||0, s = parseInt(document.getElementById('setSavings').value)||0, i = parseInt(document.getElementById('setInvest').value)||0, e = parseInt(document.getElementById('setEnt').value)||0;
-        
-        if (!n) return this.toast('稱呼不可空白');
-        if (l + s + i + e !== 100) return this.toast('分配比例加總必須為 100%');
-        
-        this.data.userName = n;
-        if (pwd) this.data.usePassword = btoa(pwd); // Only update if user typed something new. If they want to remove pwd, they'd have to reset. Let's keep it simple.
-        this.data.allocation = { living: l, savings: s, investment: i, entertainment: e }; 
-        this.data.cashflow.payday = parseInt(document.getElementById('cfPayday').value) || 5;
-        this.data.milestoneTarget = parseInt(document.getElementById('setMilestone').value) || 100000;
-        
-        this.saveData(); this.closeSettings();
-        document.getElementById('dashboardTitle').textContent = `${this.data.userName}的財務儀表板`;
-        this.updateAllRenders();
-        this.toast('設定已儲存', 'success');
-    },
-    resetAllData() {
-        this.confirm('⚠️ 將徹底清除所有資料，無法復原。確認執行？', () => {
-            localStorage.removeItem('v22_finance_dash_data'); localStorage.removeItem('v19_soft_finance_dash'); 
-            sessionStorage.removeItem('dashboard_authorized'); location.reload();
-        }, true);
-    },
-    saveCashflowConfig() {
-        this.data.cashflow.salary = parseInt(document.getElementById('currentSalary').value) || 0;
-        this.saveData(); this.renderRespList(); this.renderSurvivalBar(); this.renderPrediction();
-    },
-
-    /** STREAMING_CHUNK:Responsibilities Logic... */
-    openRespModal() { this.openModal('respModal'); document.getElementById('respName').value = ''; document.getElementById('respMonthly').value = ''; },
-    saveResp() {
-        const name = document.getElementById('respName').value.trim(), monthly = parseInt(document.getElementById('respMonthly').value);
-        if (!name || isNaN(monthly) || monthly <= 0) return this.toast('請填寫完整資訊');
-        this.data.responsibilities.push({ id: 'resp_' + Date.now(), name, monthly, type: document.getElementById('respType').value, paidMonths: [] });
-        this.saveData(); this.closeModal('respModal'); this.updateAllRenders(); this.toast('責任已新增', 'success');
-    },
-    deleteResp(id) { 
-        this.confirm('確定移除此責任？', () => { 
-            this.data.responsibilities = this.data.responsibilities.filter(r => r.id !== id); 
-            this.saveData(); this.updateAllRenders(); 
-        }, true); 
-    },
-    toggleRespPaid(id) {
-        const r = this.data.responsibilities.find(x => x.id === id);
-        if (!r) return;
-        if (!r.paidMonths) r.paidMonths = [];
-        const m = this.calc.currentMonthKey();
-        if (r.paidMonths.includes(m)) {
-            r.paidMonths = r.paidMonths.filter(x => x !== m);
-        } else {
-            r.paidMonths.push(m);
-            confetti({ particleCount: 30, spread: 40, origin: { y: 0.8 } });
-        }
-        this.saveData(); this.renderRespList(); this.renderSurvivalBar();
-    },
-
-    /** STREAMING_CHUNK:Goals Logic... */
-    openGoalModal() { this.openModal('goalModal'); document.getElementById('goalName').value = ''; document.getElementById('goalAmount').value = ''; },
-    saveGoal() {
-        const name = document.getElementById('goalName').value.trim(), target = parseInt(document.getElementById('goalAmount').value);
-        if (!name || isNaN(target) || target <= 0) return this.toast('請填寫正確金額');
-        this.data.goals.push({ id: 'goal_' + Date.now(), name, target, tier: parseInt(document.getElementById('goalTier').value), celebrated: false });
-        this.saveData(); this.closeModal('goalModal'); this.updateAllRenders(); this.checkGoals(true);
-    },
-    deleteGoal(id) { this.confirm('移除此防護目標？', () => { this.data.goals = this.data.goals.filter(g => g.id !== id); this.saveData(); this.renderPyramidGoals(); }, true); },
-
-    /** STREAMING_CHUNK:Simulations... */
-    runSimulate() {
-        const simSalary = parseInt(document.getElementById('simSalarySlider').value);
-        const simDaily = parseInt(document.getElementById('simDailySlider').value);
-        document.getElementById('simSalaryVal').textContent = '$' + simSalary.toLocaleString();
-        document.getElementById('simDailyVal').textContent = '$' + simDaily.toLocaleString();
-
-        const baseRespTotal = this.calc.totalMonthlyResps();
-        const baseSavings = this.data.cashflow.salary - baseRespTotal - (500 * 30); // simplistic base
-        const simSavings = simSalary - baseRespTotal - (simDaily * 30);
-        
-        const depositDelta = (simSavings - baseSavings) * 12;
-        const deltaEl = document.getElementById('simDepositDelta');
-        if (depositDelta >= 0) { deltaEl.textContent = '+$' + Math.round(depositDelta).toLocaleString(); deltaEl.className = "font-black text-sm mono text-emerald-700"; } 
-        else { deltaEl.textContent = '-$' + Math.round(Math.abs(depositDelta)).toLocaleString(); deltaEl.className = "font-black text-sm mono text-red-600"; }
-
-        const remainingAmt = this.data.milestoneTarget - this.calc.totalAssets();
-        const milestoneEl = document.getElementById('simMilestoneTime');
-        if (remainingAmt <= 0) { milestoneEl.textContent = "已達成安全目標"; milestoneEl.style.color = "var(--accent)"; }
-        else {
-            const bM = baseSavings > 0 ? remainingAmt / baseSavings : 999;
-            const sM = simSavings > 0 ? remainingAmt / simSavings : 999;
-            if (sM === 999) { milestoneEl.textContent = "無法累積存款"; milestoneEl.style.color = "var(--danger)"; }
-            else {
-                const diff = bM - sM;
-                if (diff > 0.1) { milestoneEl.textContent = `提前 ${Math.abs(Math.round(diff))} 個月`; milestoneEl.style.color = "var(--accent)"; }
-                else if (diff < -0.1) { milestoneEl.textContent = `延後 ${Math.abs(Math.round(diff))} 個月`; milestoneEl.style.color = "var(--danger)"; }
-                else { milestoneEl.textContent = "維持原速度"; milestoneEl.style.color = "var(--text)"; }
+            const ym = this.getCurrentYm();
+            if (this.data.clearedResps[ym]) {
+                for (let key in this.data.clearedResps[ym]) { if (this.data.clearedResps[ym][key] === id) { delete this.data.clearedResps[ym][key]; } }
             }
-        }
+            this.saveData(); this.updateAllRenders(); this.checkGoals(false); this.toast('紀錄已刪除', 'success');
+        });
     },
 
-    /** STREAMING_CHUNK:Renderers (UI Updates)... */
     updateAllRenders() {
-        this.renderHeader();
-        this.updateAccountSelects();
-        this.renderCategoryGrid();
-        this.renderTransactions();
-        this.renderRespList();
-        this.renderSurvivalBar();
-        this.renderPyramidGoals();
-        this.renderMilestone();
-        this.renderPrediction();
-        this.updateChartSelectors();
+        document.getElementById('headerUserName').textContent = this.data.userName;
+        this.renderHeader(); this.updateAccountSelects(); this.renderCategoryGrid(); this.renderTransactions();
+        this.renderPyramidGoals(); this.renderRespList(); this.renderSurvivalBar(); this.renderFamilySupportCenter();
+        this.calculateNetBudget(); this.renderPrediction();
     },
+
     renderHeader() {
         const total = this.calc.totalAssets(); 
-        const hEl = document.getElementById('totalAssetsHeader');
-        hEl.textContent = '$' + total.toLocaleString(); 
+        const headerEl = document.getElementById('totalAssetsHeader');
+        headerEl.textContent = '$' + total.toLocaleString(); headerEl.style.color = total < 0 ? 'var(--danger)' : 'var(--text)';
         
-        document.getElementById('hAllocLiving').textContent = this.data.allocation.living; 
-        document.getElementById('hAllocSavings').textContent = this.data.allocation.savings; 
-        document.getElementById('hAllocInvest').textContent = this.data.allocation.investment; 
-        document.getElementById('hAllocEnt').textContent = this.data.allocation.entertainment;
+        document.getElementById('hAllocLiving').textContent = this.data.allocation.living; document.getElementById('hAllocSavings').textContent = this.data.allocation.savings; 
+        document.getElementById('hAllocInvest').textContent = this.data.allocation.investment; document.getElementById('hAllocEnt').textContent = this.data.allocation.entertainment;
         
         const badge = document.getElementById('healthBadge');
-        if (total < 0) { badge.textContent = '超支赤字 ⚠️'; badge.className = 'badge bg-red-600 text-white border-red-800'; } 
-        else if (this.data.allocation.savings >= 20) { badge.textContent = '健全 ✦'; badge.className = 'badge bg-emerald-600 text-white border-emerald-800'; } 
-        else { badge.textContent = '待調整 ⚖️'; badge.className = 'badge bg-amber-500 text-white border-amber-800'; }
+        if (total < 0) { badge.textContent = '超支赤字 ⚠️'; badge.className = 'badge bg-red-100 text-red-800 border border-red-200'; } 
+        else if (this.data.allocation.savings >= 20) { badge.textContent = '責任健全 ✦'; badge.className = 'badge bg-slate-800 text-white border border-slate-900'; } 
+        else { badge.textContent = '儲備待調 ⚖️'; badge.className = 'badge bg-amber-100 text-amber-800 border border-amber-200'; }
     },
+    
     updateAccountSelects() {
-        const h = this.data.accounts.map(a => `<option value="${a.id}">${a.name} ($${this.calc.accountBalance(a.id).toLocaleString()})</option>`).join('');
-        document.getElementById('accountSelect').innerHTML = h || '<option value="">請先設定帳戶</option>';
+        const h = this.data.accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+        ['accountSelect', 'tfrFrom', 'tfrTo', 'payRespAccount'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.innerHTML = h || '<option value="">請先設定帳戶</option>';
+        });
+        const toSelect = document.getElementById('tfrTo'); if (this.data.accounts.length > 1 && toSelect) { toSelect.selectedIndex = 1; }
     },
     renderCategoryGrid() {
-        const grid = document.getElementById('categoryGrid');
-        let visible = this.data.categories.filter(c => c.bucket === (this.ui.currentTxType === 'expense' ? 'living' : 'living') || c.bucket === 'entertainment' || c.bucket === 'investment' || c.bucket === 'savings');
-        if (visible.length && !visible.some(c => c.id === this.ui.selectedCatId)) this.ui.selectedCatId = visible[0].id;
-        grid.innerHTML = visible.map(c => `
-            <button onclick="App.ui.selectedCatId='${c.id}'; App.renderCategoryGrid()" class="flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition active:scale-95 ${this.ui.selectedCatId===c.id?'bg-emerald-100 border-emerald-600 text-emerald-900 shadow-sm':'bg-surface2 border-border text-slate-500'}">
-                <span class="text-xl mb-1">${c.icon}</span><span style="font-size:10px;font-weight:900;">${c.name}</span>
+        const grid = document.getElementById('categoryGrid'); if (!grid) return;
+        let visibleCats = this.data.categories.filter(c => c.id !== 'cat_resp_sys'); 
+        if (visibleCats.length && !visibleCats.some(c => c.id === this.ui.selectedCatId)) { this.ui.selectedCatId = visibleCats[0].id; }
+        grid.innerHTML = visibleCats.map(c => `
+            <button onclick="App.ui.selectedCatId='${c.id}'; App.renderCategoryGrid()" class="flex flex-col items-center justify-center p-3 rounded-2xl btn-solid" style="${this.ui.selectedCatId===c.id?'background:var(--accent);color:#ffffff;':'background:#ffffff;color:var(--text);box-shadow:none;border-color:var(--border);'}">
+                <span class="text-2xl mb-1">${c.icon}</span><span style="font-size:10px;font-weight:900;">${c.name}</span>
             </button>`).join('');
     },
     renderTransactions() {
-        const list = document.getElementById('transactionList');
-        if (!this.data.transactions.length) { list.innerHTML = `<div class="text-center py-6 opacity-60"><p class="text-3xl mb-1">📝</p><p class="text-xs font-bold">尚無紀錄</p></div>`; return; }
-        
-        // Tab 1 only shows last 7 days for cleanliness
-        const now = new Date();
-        const recent = this.data.transactions.filter(t => new Date(t.date) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()-7)).slice(0,10);
-        
-        if (!recent.length) { list.innerHTML = `<div class="text-center py-6 opacity-60"><p class="text-xs font-bold">近 7 天無紀錄</p></div>`; return; }
+        const list = document.getElementById('transactionList'); if (!list) return;
+        const now = new Date(), recent = this.data.transactions.filter(t => new Date(t.date) >= new Date(now.getFullYear(), now.getMonth(), now.getDate()-7));
+        if (!recent.length) { list.innerHTML = `<div class="text-center py-6 opacity-60"><p class="text-3xl mb-1">🍃</p><p class="text-xs font-bold text-slate-500">最近 7 天無明細</p></div>`; return; }
 
         list.innerHTML = recent.map(t => {
-            const c = this.data.categories.find(x => x.id === t.categoryId) || { icon: '❓', name: '未分類' };
-            const a = this.data.accounts.find(x => x.id === t.accountId) || { name: '未知' };
-            const d = new Date(t.date);
-            const isInc = t.type === 'income';
+            const isTfr = t.type === 'transfer';
+            let iconHtml = '', descHtml = '', amtClass = '', sign = '';
+            if (isTfr) {
+                const aFrom = this.data.accounts.find(x => x.id === t.accountId) || { name: '未知' }, aTo = this.data.accounts.find(x => x.id === t.targetAccountId) || { name: '未知' };
+                iconHtml = '🔄'; descHtml = `<p class="font-black text-xs truncate text-slate-800">${t.note || '資金轉帳'}</p><p class="text-[9px] font-bold text-slate-500 mt-1">${aFrom.name} ➡️ ${aTo.name}</p>`; amtClass = 'text-slate-500'; sign = '';
+            } else {
+                const c = this.data.categories.find(x => x.id === t.categoryId) || { icon: '❓', name: '未分類' }, a = this.data.accounts.find(x => x.id === t.accountId) || { name: '未知' }, isInc = t.type === 'income';
+                iconHtml = c.icon; descHtml = `<p class="font-black text-xs truncate text-slate-900">${t.note || ''}</p><p class="text-[9px] font-bold text-slate-500 mt-1">${c.name} · ${a.name}</p>`; amtClass = isInc ? 'text-emerald-700' : 'text-slate-900'; sign = isInc ? '+' : '-';
+            }
             return `
-            <div class="flex items-center justify-between card p-3 mb-2 bg-white">
-                <div class="flex items-center gap-3 overflow-hidden">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 bg-slate-100 border border-slate-200">${c.icon}</div>
-                    <div class="min-w-0"><p class="font-black text-xs truncate text-rose-950">${t.note}</p><p class="text-[10px] text-slate-500 font-bold mt-1">${d.getMonth()+1}/${d.getDate()} · ${a.name}</p></div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span class="mono font-black text-sm ${isInc?'text-emerald-600':'text-rose-950'}">${isInc ? '+' : '-'}$${t.amount.toLocaleString()}</span>
-                    <button onclick="App.deleteTrans('${t.id}')" class="w-7 h-7 rounded-full flex items-center justify-center text-red-400 hover:bg-red-100 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                </div>
+            <div class="flex items-center justify-between card p-3 w-full border-slate-200">
+                <div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-slate-50 border border-slate-100">${iconHtml}</div><div class="min-w-0">${descHtml}</div></div>
+                <div class="flex items-center gap-2 shrink-0"><span class="mono font-black text-sm ${amtClass}">${sign}$${t.amount.toLocaleString()}</span><button onclick="App.deleteTrans('${t.id}')" class="w-7 h-7 rounded-full flex items-center justify-center text-rose-300 hover:bg-rose-100 hover:text-red-600 transition active:scale-90 font-black text-lg">×</button></div>
             </div>`;
         }).join('');
     },
-    renderRespList() {
-        const list = document.getElementById('respList');
-        document.getElementById('currentSalary').value = this.data.cashflow.salary;
-        const totalResp = this.calc.totalMonthlyResps();
-        const unpaidResp = this.calc.unpaidResps();
-        const free = Math.max(0, this.data.cashflow.salary - unpaidResp);
-        
-        document.getElementById('calcTotalResp').textContent = '-$' + unpaidResp.toLocaleString();
-        document.getElementById('calcFreeMoney').textContent = '$' + free.toLocaleString();
 
-        const mKey = this.calc.currentMonthKey();
-        list.innerHTML = this.data.responsibilities.map(r => {
-            const isPaid = r.paidMonths && r.paidMonths.includes(mKey);
-            return `
-            <div class="card p-3 mb-2 flex items-center justify-between w-full bg-white transition ${isPaid ? 'opacity-50 grayscale' : ''}">
-                <div class="flex items-center gap-3">
-                    <button onclick="App.toggleRespPaid('${r.id}')" class="w-7 h-7 rounded-full border-2 flex items-center justify-center transition ${isPaid ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-slate-50 border-slate-300 text-transparent hover:border-emerald-400'}">✓</button>
-                    <div><span class="font-black text-xs text-rose-950">${r.name}</span><span class="text-[9px] text-slate-400 ml-1">(${this.constants.RESP_ICONS[r.type]||'📌'})</span></div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="mono font-black text-sm ${isPaid ? 'line-through text-slate-400' : 'text-rose-950'}">$${r.monthly.toLocaleString()}</span>
-                    <button onclick="App.deleteResp('${r.id}')" class="w-6 h-6 rounded-full flex items-center justify-center text-red-300 hover:bg-red-50"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                </div>
-            </div>`;
-        }).join('');
-
-        // 建議分配 (扣除責任後的淨閒錢 * 比例)
-        const advList = document.getElementById('adviseList');
-        const netBudget = this.data.cashflow.salary - totalResp;
-        if (netBudget > 0) {
-            const l = Math.floor(netBudget * (this.data.allocation.living/100));
-            const s = Math.floor(netBudget * (this.data.allocation.savings/100));
-            const i = Math.floor(netBudget * (this.data.allocation.investment/100));
-            const e = Math.floor(netBudget * (this.data.allocation.entertainment/100));
-            advList.innerHTML = `
-                <div class="flex justify-between"><span class="text-emerald-700">🏠 生活 (${this.data.allocation.living}%)</span><span class="mono text-slate-800">$${l.toLocaleString()}</span></div>
-                <div class="flex justify-between"><span class="text-indigo-700">💰 儲蓄 (${this.data.allocation.savings}%)</span><span class="mono text-slate-800">$${s.toLocaleString()}</span></div>
-                <div class="flex justify-between"><span class="text-amber-700">📈 投資 (${this.data.allocation.investment}%)</span><span class="mono text-slate-800">$${i.toLocaleString()}</span></div>
-                <div class="flex justify-between"><span class="text-rose-600">🎮 娛樂 (${this.data.allocation.entertainment}%)</span><span class="mono text-slate-800">$${e.toLocaleString()}</span></div>
-            `;
-        } else {
-            advList.innerHTML = '<p class="text-red-500 py-1">薪資不足以支付本月固定責任，請注意現金流！</p>';
-        }
-    },
     renderSurvivalBar() {
-        const payday = this.data.cashflow.payday || 5, now = new Date(), today = now.getDate();
+        const payday = this.data.cashflow.payday || 5, now = new Date(), today = now.getDate(), ym = this.getCurrentYm();
         let daysLeft = today < payday ? payday - today : Math.ceil((new Date(now.getFullYear(), now.getMonth() + 1, payday) - now) / 86400000);
-        if (daysLeft <= 0) daysLeft = 1;
+        if (daysLeft <= 0) daysLeft = 1; 
         
-        // 嚴格淨預算算法 (可支配現金 - 尚未繳納的責任)
         const spendableCash = this.calc.spendableCash();
-        const unpaidResp = this.calc.unpaidResps();
-        const netSafePool = Math.max(0, spendableCash - unpaidResp);
-
         document.getElementById('survPool').textContent = `日常池餘額：$${spendableCash.toLocaleString()}`;
         document.getElementById('survivalDaysLeft').textContent = daysLeft;
         
         const dangerDaily = Math.floor(spendableCash / daysLeft);
-        const safeDaily = Math.floor(netSafePool / daysLeft);
-        const warnDaily = Math.floor(Math.max(0, spendableCash - (unpaidResp / 2)) / daysLeft);
+        const clearedIds = Object.keys(this.data.clearedResps[ym] || {});
+        
+        // V25: 僅計算活躍的責任
+        const unpaidRespTotal = this.getActiveResps(ym).filter(r => !clearedIds.includes(r.id)).reduce((s, r) => s + r.monthly, 0)
+                              + this.getActiveFam(ym).filter(m => !clearedIds.includes(m.id)).reduce((s, m) => s + m.monthlySupport, 0);
+
+        const safeDaily = Math.floor(Math.max(0, spendableCash - unpaidRespTotal) / daysLeft);
+        const warnDaily = Math.floor(Math.max(0, spendableCash - (unpaidRespTotal / 2)) / daysLeft);
         
         document.getElementById('survSafe').textContent = '$' + safeDaily.toLocaleString();
         document.getElementById('survWarn').textContent = '$' + warnDaily.toLocaleString();
@@ -1140,34 +965,207 @@ const App = {
         const daysInCycle = payday <= today ? (new Date(now.getFullYear(), now.getMonth() + 1, payday) - new Date(now.getFullYear(), now.getMonth(), payday)) / 86400000 : 30;
         const pct = Math.max(0, Math.min(100, ((daysInCycle - daysLeft) / daysInCycle) * 100));
         const fill = document.getElementById('survivalFill');
-        fill.style.width = pct + '%';
-        fill.style.background = pct > 85 ? 'var(--danger)' : pct > 55 ? 'var(--accent3)' : 'var(--accent)';
+        fill.style.width = pct + '%'; fill.style.background = pct > 85 ? 'var(--danger)' : pct > 55 ? 'var(--accent3)' : 'var(--text)';
     },
-    renderPyramidGoals() {
-        const container = document.getElementById('pyramidGoalsContainer');
-        if (!this.data.goals.length) { container.innerHTML = `<div class="text-center py-6 opacity-50"><p class="text-xs font-bold">尚未設定防衛目標</p></div>`; return; }
+
+    calculateNetBudget() {
+        const ym = this.getCurrentYm();
+        const inputEl = document.getElementById('actualSalary');
         
+        if (document.activeElement !== inputEl) { inputEl.value = this.data.actualSalary[ym] || ''; } 
+        else { this.data.actualSalary[ym] = parseInt(inputEl.value) || 0; this.saveData(); }
+        
+        const actualSalary = this.data.actualSalary[ym] || 0;
+        const totalFixed = this.calc.monthlyRespTotal(ym); // V25 動態計算當月總責任
+        const netAllocatable = Math.max(0, actualSalary - totalFixed);
+        
+        document.getElementById('calcSalaryAmount').textContent = '$' + actualSalary.toLocaleString();
+        document.getElementById('totalFixedAmount').textContent = '-$' + totalFixed.toLocaleString();
+        document.getElementById('netAllocatableAmount').textContent = '$' + netAllocatable.toLocaleString();
+        
+        const lRatio = (this.data.allocation.living || 50) / 100, sRatio = (this.data.allocation.savings || 20) / 100, iRatio = (this.data.allocation.investment || 15) / 100, eRatio = (this.data.allocation.entertainment || 15) / 100;
+        document.getElementById('suggestLiving').textContent = '$' + Math.round(netAllocatable * lRatio).toLocaleString();
+        document.getElementById('suggestSavings').textContent = '$' + Math.round(netAllocatable * sRatio).toLocaleString();
+        document.getElementById('suggestInvest').textContent = '$' + Math.round(netAllocatable * iRatio).toLocaleString();
+        document.getElementById('suggestEnt').textContent = '$' + Math.round(netAllocatable * eRatio).toLocaleString();
+    },
+
+    clickPayResp(id, type, name, amount) {
+        const ym = this.getCurrentYm();
+        if (this.data.clearedResps[ym] && this.data.clearedResps[ym][id]) {
+            this.confirm(`確定要取消打勾嗎？<br><span class="text-rose-500 text-[10px]">將同步刪除該筆已產生的記帳紀錄。</span>`, () => {
+                const txId = this.data.clearedResps[ym][id];
+                this.data.transactions = this.data.transactions.filter(t => t.id !== txId);
+                delete this.data.clearedResps[ym][id];
+                this.saveData(); this.updateAllRenders(); this.toast('已取消並刪除對應的交易紀錄', 'success');
+            });
+        } else {
+            this.ui.pendingResp = { id, type, name, amount };
+            document.getElementById('payRespDesc').textContent = `準備繳納：${name} ($${amount.toLocaleString()})`;
+            this.updateAccountSelects(); this.openModal('payRespModal');
+        }
+    },
+    
+    confirmPayResp() {
+        const accId = document.getElementById('payRespAccount').value; if (!accId) return this.toast('請選擇扣款帳戶');
+        const ym = this.getCurrentYm(), txId = 'tx_' + Date.now().toString(36);
+        const newTx = { id: txId, amount: this.ui.pendingResp.amount, type: 'expense', categoryId: 'cat_resp_sys', accountId: accId, targetAccountId: null, note: this.ui.pendingResp.name, date: new Date().toISOString() };
+        this.data.transactions.unshift(newTx);
+        if (!this.data.clearedResps[ym]) this.data.clearedResps[ym] = {};
+        this.data.clearedResps[ym][this.ui.pendingResp.id] = txId;
+        this.saveData(); this.closeModal('payRespModal'); this.updateAllRenders(); this.toast('繳納成功，已寫入交易紀錄！', 'success');
+    },
+
+    // ----------------------------------------------------
+    // 責任與家庭支援 CRUD (支援 V25 編輯與週期)
+    // ----------------------------------------------------
+    openRespModal() { 
+        document.getElementById('respModalTitle').innerText = "新增固定責任";
+        document.getElementById('respId').value = ''; document.getElementById('respName').value = ''; document.getElementById('respMonthly').value = ''; 
+        document.getElementById('respStart').value = this.getCurrentYm(); document.getElementById('respEnd').value = ''; 
+        this.openModal('respModal'); 
+    },
+    editResp(id) {
+        const r = this.data.responsibilities.find(x => x.id === id); if (!r) return;
+        document.getElementById('respModalTitle').innerText = "編輯固定責任";
+        document.getElementById('respId').value = r.id; document.getElementById('respName').value = r.name; document.getElementById('respMonthly').value = r.monthly; 
+        document.getElementById('respType').value = r.type; document.getElementById('respStart').value = r.start || ''; document.getElementById('respEnd').value = r.end || ''; 
+        this.openModal('respModal');
+    },
+    saveResp() {
+        const id = document.getElementById('respId').value, name = document.getElementById('respName').value.trim(), monthly = parseInt(document.getElementById('respMonthly').value);
+        const type = document.getElementById('respType').value, start = document.getElementById('respStart').value, end = document.getElementById('respEnd').value;
+        if (!name || isNaN(monthly) || monthly <= 0) return this.toast('請填寫正確資訊');
+        
+        if (id) {
+            const r = this.data.responsibilities.find(x => x.id === id);
+            if (r) { r.name = name; r.monthly = monthly; r.type = type; r.start = start; r.end = end; }
+        } else {
+            this.data.responsibilities.push({ id: 'resp_' + Date.now().toString(36), name, monthly, type, start, end });
+        }
+        this.saveData(); this.closeModal('respModal'); this.updateAllRenders(); this.toast(id ? '責任已更新' : '已新增責任', 'success');
+    },
+    deleteResp(id) { this.confirm('確定要移除此項目？', () => { this.data.responsibilities = this.data.responsibilities.filter(r => r.id !== id); this.saveData(); this.updateAllRenders(); }); },
+    renderRespList() {
+        const list = document.getElementById('respList'); if (!list) return;
+        const ym = this.getCurrentYm();
+        const activeResps = this.getActiveResps(ym);
+        if (!activeResps.length) { list.innerHTML = `<p class="text-xs text-slate-400 text-center py-4 border-2 border-dashed border-slate-200 rounded-xl">本期尚無活躍責任</p>`; return; }
+        
+        const clearedIds = Object.keys(this.data.clearedResps[ym] || {});
+        list.innerHTML = activeResps.map(r => {
+            const isCleared = clearedIds.includes(r.id);
+            const periodStr = r.end ? `${r.start||'開始'}~${r.end}` : (r.start ? `${r.start}起` : '持續');
+            return `
+            <div class="card-inner p-3 flex items-center justify-between bg-white border-slate-200">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <button onclick="App.clickPayResp('${r.id}', 'resp', '${r.name}', ${r.monthly})" class="w-6 h-6 shrink-0 rounded border-2 flex items-center justify-center transition ${isCleared ? 'bg-slate-800 border-slate-800 text-white' : 'border-slate-300 text-transparent'}"><span class="text-sm font-black">✓</span></button>
+                    <div class="truncate">
+                        <p class="font-black text-xs text-slate-800 truncate ${isCleared ? 'line-through opacity-50' : ''}">${this.constants.RESP_ICONS[r.type]||'📌'} ${r.name}</p>
+                        <p class="text-[9px] font-bold text-slate-400 mt-0.5">${periodStr}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0 pl-1">
+                    <span class="mono font-black text-sm text-slate-900 ${isCleared ? 'opacity-50' : ''}">$${r.monthly.toLocaleString()}</span>
+                    <button onclick="App.editResp('${r.id}')" class="text-slate-400 hover:text-slate-700 font-black text-sm p-1 ml-1">✏️</button>
+                    <button onclick="App.deleteResp('${r.id}')" class="text-slate-300 hover:text-red-500 font-black text-lg p-1">×</button>
+                </div>
+            </div>`;
+        }).join('');
+    },
+
+    openFamilyModal() { 
+        document.getElementById('famModalTitle').innerText = "新增家庭支援";
+        document.getElementById('famId').value = ''; document.getElementById('famName').value = ''; document.getElementById('famMonthly').value = ''; 
+        document.getElementById('famStart').value = this.getCurrentYm(); document.getElementById('famEnd').value = ''; 
+        this.openModal('familyModal'); 
+    },
+    editFamilyMember(id) {
+        const m = this.data.familyMembers.find(x => x.id === id); if (!m) return;
+        document.getElementById('famModalTitle').innerText = "編輯家庭支援";
+        document.getElementById('famId').value = m.id; document.getElementById('famName').value = m.name; document.getElementById('famMonthly').value = m.monthlySupport; 
+        document.getElementById('famStart').value = m.start || ''; document.getElementById('famEnd').value = m.end || ''; 
+        this.openModal('familyModal');
+    },
+    saveFamilyMember() {
+        const id = document.getElementById('famId').value, name = document.getElementById('famName').value.trim(), monthly = parseInt(document.getElementById('famMonthly').value);
+        const start = document.getElementById('famStart').value, end = document.getElementById('famEnd').value;
+        if (!name || isNaN(monthly) || monthly <= 0) return this.toast('請填寫完整資訊');
+        
+        if (id) {
+            const m = this.data.familyMembers.find(x => x.id === id);
+            if (m) { m.name = name; m.monthlySupport = monthly; m.start = start; m.end = end; }
+        } else {
+            this.data.familyMembers.push({ id: 'fam_' + Date.now().toString(36), name, monthlySupport: monthly, start, end });
+        }
+        this.saveData(); this.closeModal('familyModal'); this.updateAllRenders(); this.toast(id ? '支援已更新' : '已新增支援', 'success');
+    },
+    deleteFamilyMember(id) { this.confirm('確定移除此支援？', () => { this.data.familyMembers = this.data.familyMembers.filter(m => m.id !== id); this.saveData(); this.updateAllRenders(); }); },
+    renderFamilySupportCenter() {
+        const listEl = document.getElementById('familyMemberList'); if (!listEl) return;
+        const ym = this.getCurrentYm();
+        const activeFam = this.getActiveFam(ym);
+        if (!activeFam.length) { listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4 border-2 border-dashed border-slate-200 rounded-xl">本期尚無家庭支援</p>`; return; }
+        
+        const clearedIds = Object.keys(this.data.clearedResps[ym] || {});
+        listEl.innerHTML = activeFam.map(m => {
+            const isCleared = clearedIds.includes(m.id);
+            const periodStr = m.end ? `${m.start||'開始'}~${m.end}` : (m.start ? `${m.start}起` : '持續');
+            return `
+            <div class="card-inner p-3 flex items-center justify-between bg-white border-slate-200">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <button onclick="App.clickPayResp('${m.id}', 'fam', '家庭支援: ${m.name}', ${m.monthlySupport})" class="w-6 h-6 shrink-0 rounded border-2 flex items-center justify-center transition ${isCleared ? 'bg-slate-800 border-slate-800 text-white' : 'border-slate-300 text-transparent'}"><span class="text-sm font-black">✓</span></button>
+                    <div class="truncate">
+                        <p class="font-black text-xs text-slate-800 truncate ${isCleared ? 'line-through opacity-50' : ''}">👨‍👩‍👧 ${m.name}</p>
+                        <p class="text-[9px] font-bold text-slate-400 mt-0.5">${periodStr}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0 pl-1">
+                    <span class="mono font-black text-sm text-slate-900 ${isCleared ? 'opacity-50' : ''}">$${m.monthlySupport.toLocaleString()}</span>
+                    <button onclick="App.editFamilyMember('${m.id}')" class="text-slate-400 hover:text-slate-700 font-black text-sm p-1 ml-1">✏️</button>
+                    <button onclick="App.deleteFamilyMember('${m.id}')" class="text-slate-300 hover:text-red-500 font-black text-lg p-1">×</button>
+                </div>
+            </div>`;
+        }).join('');
+    },
+
+    openGoalModal() { this.openModal('goalModal'); },
+    saveGoal() {
+        const name = document.getElementById('goalName').value.trim(), target = parseInt(document.getElementById('goalAmount').value);
+        if (!name || isNaN(target) || target <= 0) return this.toast('請填寫正確目標名稱與金額');
+        this.data.goals.push({ id: 'goal_' + Date.now().toString(36), name, target, tier: parseInt(document.getElementById('goalTier').value), celebrated: false });
+        this.saveData(); this.closeModal('goalModal'); document.getElementById('goalName').value = ''; document.getElementById('goalAmount').value = ''; this.renderPyramidGoals(); this.checkGoals(true);
+    },
+    deleteGoal(id) { this.confirm('確定移除此防護目標？', () => { this.data.goals = this.data.goals.filter(g => g.id !== id); this.saveData(); this.renderPyramidGoals(); }); },
+    renderPyramidGoals() {
+        const container = document.getElementById('pyramidGoalsContainer'); if (!container) return;
+        if (!this.data.goals.length) { container.innerHTML = `<div class="text-center py-10 opacity-40"><p class="text-xs font-bold text-slate-500">尚無金字塔目標</p></div>`; return; }
         let pool = this.calc.totalAssets(); 
         const processed = [...this.data.goals].sort((a,b) => a.tier - b.tier).map(g => {
-            let s = pool > 0 ? Math.min(pool, g.target) : 0;
-            pool = pool > 0 ? pool - s : 0; 
-            return { ...g, currentSaved: s, progress: g.target>0 ? (s/g.target)*100:0, isCompleted: s>=g.target };
+            let currentSaved = pool > 0 ? Math.min(pool, g.target) : 0; pool = pool > 0 ? pool - currentSaved : 0; 
+            return { ...g, currentSaved, progress: g.target > 0 ? (currentSaved / g.target) * 100 : 0, isCompleted: currentSaved >= g.target };
         });
-        
-        const tiers = [ { id: 1, title: '第一層：安全資金' }, { id: 2, title: '第二層：家庭負擔' }, { id: 3, title: '第三層：夢想成長' } ];
+        const tiers = [ { id: 1, title: '🧱 第一防禦圈：安全預備金' }, { id: 2, title: '🛡️ 第二防禦圈：大額負擔' }, { id: 3, title: '🚀 第三防禦圈：積極成長' } ];
         container.innerHTML = tiers.map(t => {
-            const tg = processed.filter(g => g.tier === t.id);
-            if (!tg.length) return '';
+            const tierGoals = processed.filter(g => g.tier === t.id); if (!tierGoals.length) return '';
             const isLocked = processed.filter(g => g.tier < t.id).some(g => !g.isCompleted);
             return `
-            <div class="card p-4 bg-white border-2 border-emerald-100 ${isLocked ? 'tier-locked-visual' : ''}">
-                <div class="font-black text-xs text-emerald-950 mb-3">${t.title}</div>
-                <div class="space-y-3">
-                    ${tg.map(g => `
-                        <div>
-                            <div class="flex justify-between text-xs mb-1"><span class="font-bold text-slate-800">${g.name}</span><button onclick="App.deleteGoal('${g.id}')" class="text-red-400 font-bold hover:text-red-600 px-1">✕</button></div>
-                            <div class="progress-track h-2 mb-1 border border-slate-200"><div class="progress-fill h-2" style="background:${g.isCompleted?'var(--accent)':'#94a3b8'}; width:${g.progress}%"></div></div>
-                            <div class="flex justify-between text-[9px] font-bold text-slate-500"><span>${Math.round(g.progress)}%</span><span>$${Math.floor(g.currentSaved).toLocaleString()} / ${g.target.toLocaleString()}</span></div>
+            <div class="card p-4 relative w-full border-2 border-slate-800 bg-white ${isLocked ? 'tier-locked-visual' : ''}">
+                <div class="flex items-center justify-between mb-3 text-xs"><span class="font-black text-slate-900">${t.title}</span>${isLocked ? '<span class="text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">🔒 底層未滿</span>' : ''}</div>
+                <div class="space-y-3 w-full">
+                    ${tierGoals.map(g => `
+                        <div class="card-inner p-3 bg-surface2 border-slate-200">
+                            <div class="flex justify-between items-center mb-2 text-xs">
+                                <span class="font-black text-slate-800 truncate">${g.name}</span>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[9px] font-black px-2 py-0.5 rounded-md" style="${g.isCompleted ? 'background:var(--text);color:white;':'background:var(--border);color:var(--muted);'}">${g.isCompleted ? '已儲滿' : '解鎖中'}</span>
+                                    <button onclick="App.deleteGoal('${g.id}')" class="text-slate-400 font-black px-1">×</button>
+                                </div>
+                            </div>
+                            <div class="progress-track h-2 mb-1.5"><div class="progress-fill h-2 bg-slate-800" style="width:${g.progress}%"></div></div>
+                            <div class="flex justify-between text-[10px] text-slate-500 font-black">
+                                <span>${Math.round(g.progress)}%</span><span>$${Math.floor(g.currentSaved).toLocaleString()} / ${g.target.toLocaleString()}</span>
+                            </div>
                         </div>`).join('')}
                 </div>
             </div>`;
@@ -1176,122 +1174,108 @@ const App = {
     checkGoals(canFire) {
         let newlyCompleted = false, pool = this.calc.totalAssets();
         [...this.data.goals].sort((a,b) => a.tier - b.tier).forEach(g => {
-            if (pool > 0) { 
-                const saved = Math.min(pool, g.target); pool -= saved; 
-                if (saved >= g.target && !g.celebrated && canFire) { g.celebrated = true; newlyCompleted = true; } 
-            }
+            if (pool > 0) { const saved = Math.min(pool, g.target); pool -= saved; if (saved >= g.target && !g.celebrated && canFire) { g.celebrated = true; newlyCompleted = true; } }
         });
-        this.saveData();
-        if (newlyCompleted) { confetti({ particleCount: 150, spread: 75, origin: { y: 0.6 } }); this.toast("🎉 恭喜！防護金字塔目標達成！", "success"); this.renderPyramidGoals(); }
+        this.saveData(); if (newlyCompleted) { confetti({ particleCount: 150, spread: 75, origin: { y: 0.6 } }); this.toast("🎉 恭喜完成防護里程碑！", "success"); this.renderPyramidGoals(); }
     },
-    renderMilestone() {
-        const target = this.data.milestoneTarget || 100000, current = Math.max(0, this.calc.totalAssets());
-        const pct = Math.min(100, Math.round((current / target) * 100));
-        document.getElementById('milestoneAmt').textContent = '$' + target.toLocaleString();
-        document.getElementById('milestoneNow').textContent = '$' + current.toLocaleString();
-        document.getElementById('milestonePct').textContent = pct + '%';
-        document.getElementById('milestoneFill').style.width = pct + '%';
+    runSimulate() {
+        const simSalary = parseInt(document.getElementById('simSalarySlider').value), simDaily = parseInt(document.getElementById('simDailySlider').value), simRespMod = document.getElementById('simRespMod').value;
+        document.getElementById('simSalaryVal').textContent = '$' + simSalary.toLocaleString(); document.getElementById('simDailyVal').textContent = '$' + simDaily.toLocaleString();
+        const baseRespTotal = this.calc.monthlyRespTotal(this.getCurrentYm());
+        let simRespTotal = baseRespTotal;
+        if (simRespMod === 'reduce_family') simRespTotal = Math.max(0, baseRespTotal - 4000); else if (simRespMod === 'cut_subscriptions') simRespTotal = Math.max(0, baseRespTotal - 2100); else if (simRespMod === 'free_debts') simRespTotal = Math.max(0, baseRespTotal - 5000);
+        const currentActualSalary = this.data.actualSalary[this.getCurrentYm()] || 40000, baseSavings = currentActualSalary - baseRespTotal - (500 * 30), simSavings = simSalary - simRespTotal - (simDaily * 30), depositDelta = (simSavings - baseSavings) * 12;
+        const deltaEl = document.getElementById('simDepositDelta');
+        if (depositDelta >= 0) { deltaEl.textContent = '+$' + Math.round(depositDelta).toLocaleString(); deltaEl.className = "font-black text-sm mono text-emerald-700"; } 
+        else { deltaEl.textContent = '-$' + Math.round(Math.abs(depositDelta)).toLocaleString(); deltaEl.className = "font-black text-sm mono text-rose-500"; }
     },
     renderPrediction() {
-        const canvas = document.getElementById('forecastChart');
-        if (!canvas) return;
+        const currentAssets = this.calc.totalAssets(), monthlySavings = (this.data.actualSalary[this.getCurrentYm()] || 40000) - this.calc.monthlyRespTotal(this.getCurrentYm()) - 15000; 
+        const canvas = document.getElementById('forecastChart'); if (!canvas) return;
         if (this.charts.forecast) this.charts.forecast.destroy();
-        
-        const currentAssets = this.calc.totalAssets();
-        const monthlySavings = this.data.cashflow.salary - this.calc.totalMonthlyResps() - (500*30); // Simple guess
         const data = [currentAssets]; for(let i=1; i<=6; i++) data.push(currentAssets + (monthlySavings * i));
-        
         this.charts.forecast = new Chart(canvas.getContext('2d'), {
-            type: 'line', data: { labels: ['目前','1月後','2月後','3月後','4月後','5月後','6月後'], datasets: [{ data, borderColor: '#558771', backgroundColor: 'rgba(85, 135, 113, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#558771' }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 9 } } }, x: { grid: { display: false }, ticks: { font: { size: 9 } } } } }
+            type: 'line', data: { labels: ['目前', '1月', '2月', '3月', '4月', '5月', '6月'], datasets: [{ label: '預估走勢', data, borderColor: '#1c1412', backgroundColor: 'rgba(28, 20, 18, 0.05)', borderWidth: 3, fill: true, tension: 0.3, pointBackgroundColor: '#1c1412' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(28,20,18,0.05)' }, ticks: { font: { size: 9 }, color: '#8c7672' } }, x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#8c7672' } } } }
         });
     },
 
-    /** STREAMING_CHUNK:Stats and Charting... */
-    changeStatPeriod(p) {
-        this.ui.statPeriod = p;
-        ['month','year'].forEach(x => {
-            const btn = document.getElementById('btn-' + x);
-            if (x === p) { btn.className = "flex-1 py-2 text-xs font-black rounded-xl seg-active transition"; } 
-            else { btn.className = "flex-1 py-2 text-xs font-black rounded-xl transition text-slate-500 border-2 border-transparent"; }
-        });
-        this.updateChartSelectors();
+    initTimeSelects() {
+        const type = document.getElementById('statTypeSelect').value, timeSelect = document.getElementById('statTimeSelect'), now = new Date(); let optionsHtml = '';
+        if (type === 'month') {
+            for (let i = 0; i < 12; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1), val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                optionsHtml += `<option value="${val}">${d.getFullYear()}年 ${String(d.getMonth() + 1).padStart(2, '0')}月</option>`;
+            }
+        } else { for (let i = 0; i < 3; i++) { const year = now.getFullYear() - i; optionsHtml += `<option value="${year}">${year} 年度</option>`; } }
+        timeSelect.innerHTML = optionsHtml;
     },
-    updateChartSelectors() {
-        const sel = document.getElementById('statTimeSelect');
-        const now = new Date();
-        let html = '';
-        if (this.ui.statPeriod === 'month') {
-            for(let i=0; i<12; i++) {
-                const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-                const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-                html += `<option value="${val}">${val.replace('-','年')}月</option>`;
-            }
-        } else {
-            for(let i=0; i<3; i++) {
-                const y = now.getFullYear() - i;
-                html += `<option value="${y}">${y} 年度</option>`;
-            }
-        }
-        sel.innerHTML = html;
-        this.ui.statDateFilter = sel.value;
+    updateTimeOptions() { this.initTimeSelects(); this.updateCharts(); },
+    toggleChartType(type) {
+        this.ui.chartType = type;
+        document.getElementById('chartTypeExp').style.cssText = type === 'expense' ? `border-bottom-width:4px; border-color:var(--text);color:var(--text);` : `border-color:transparent;color:var(--muted);`;
+        document.getElementById('chartTypeInc').style.cssText = type === 'income' ? `border-bottom-width:4px; border-color:var(--text);color:var(--text);` : `border-color:transparent;color:var(--muted);`;
         this.updateCharts();
     },
     updateCharts() {
         const canvas = document.getElementById('categoryChart'); if(!canvas) return;
-        this.ui.statDateFilter = document.getElementById('statTimeSelect').value;
-        this.ui.chartType = document.getElementById('statTypeSelect').value;
+        const statType = document.getElementById('statTypeSelect').value, timeVal = document.getElementById('statTimeSelect').value, [selYear, selMonth] = timeVal.split('-');
         
-        const filtered = this.data.transactions.filter(t => t.date.startsWith(this.ui.statDateFilter));
+        const filtered = this.data.transactions.filter(t => {
+            const d = new Date(t.date);
+            if (statType === 'month') return d.getFullYear() === parseInt(selYear) && (d.getMonth() + 1) === parseInt(selMonth);
+            else return d.getFullYear() === parseInt(timeVal);
+        });
+        
+        document.getElementById('chartRangeLabel').textContent = statType === 'month' ? `${selYear}/${selMonth} 分析` : `${timeVal} 全年分析`;
         const target = filtered.filter(t => t.type === this.ui.chartType), catMap = {};
         target.forEach(t => { const name = this.data.categories.find(c => c.id === t.categoryId)?.name || '未分類'; catMap[name] = (catMap[name] || 0) + t.amount; });
         
         const labels = Object.keys(catMap), data = Object.values(catMap);
-        document.getElementById('noChartData').className = data.length ? 'hidden' : 'absolute inset-0 flex flex-col items-center justify-center rounded-3xl bg-surface border-2 border-border';
+        document.getElementById('noChartData').classList.toggle('hidden', data.length > 0);
         
         if (this.charts.category) this.charts.category.destroy();
         this.charts.category = new Chart(canvas.getContext('2d'), {
-            type: 'doughnut', data: { labels, datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? this.constants.CHART_COLORS : ['#ebdcd9'], borderWidth: 2, borderColor: '#fff' }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '65%' }
+            type: 'doughnut', data: { labels, datasets: [{ data: data.length ? data : [1], backgroundColor: data.length ? this.constants.CHART_COLORS : ['#ebdcd9'], borderWidth: 2, borderColor: '#ffffff' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%', animation: { animateScale: true } }
         });
         
         const total = data.reduce((a, b) => a + b, 0), legendEl = document.getElementById('categoryLegend');
         if(legendEl) legendEl.innerHTML = labels.map((l, idx) => `
-            <div class="flex justify-between items-center text-xs p-2 rounded-xl mb-1 w-full border-2 border-slate-100 bg-slate-50">
-                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-md border border-slate-300" style="background:${this.constants.CHART_COLORS[idx % this.constants.CHART_COLORS.length]}"></span><span class="font-black text-slate-800">${l}</span></span>
-                <span class="mono font-black text-slate-800">$${catMap[l].toLocaleString()} <span class="text-[10px] text-slate-400 font-bold ml-1">(${total ? Math.round(catMap[l]/total*100):0}%)</span></span>
+            <div class="flex justify-between items-center text-xs p-2.5 rounded-xl mb-1.5 w-full bg-white border border-slate-200 shadow-sm">
+                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full border border-slate-900" style="background:${this.constants.CHART_COLORS[idx % this.constants.CHART_COLORS.length]}"></span><span class="font-black text-slate-800">${l}</span></span>
+                <span class="mono font-black text-slate-900">$${catMap[l].toLocaleString()} <span style="color:var(--muted); font-size: 10px;">(${total ? Math.round(catMap[l]/total*100):0}%)</span></span>
             </div>`).join('');
             
-        // Net Budget Tracker (Only makes sense for Monthly Expense)
-        const bucketEl = document.getElementById('bucketAnalysis');
-        if (this.ui.statPeriod === 'month' && this.ui.chartType === 'expense') {
-            const exp = filtered.filter(t => t.type === 'expense'), buckets = { living: 0, savings: 0, investment: 0, entertainment: 0 };
-            exp.forEach(t => { const c = this.data.categories.find(x => x.id === t.categoryId); buckets[c ? c.bucket : 'living'] = (buckets[c ? c.bucket : 'living'] || 0) + t.amount; });
-            
-            // Calc net budget for the selected month (assume current salary logic for past months to keep it simple)
-            const netBudget = this.data.cashflow.salary - this.calc.totalMonthlyResps();
-            const getBgt = (pct) => Math.max(1, Math.floor(netBudget * (pct/100)));
-            
-            const B_INFO = [
-                { k: 'living', n: '🏠 生活', b: getBgt(this.data.allocation.living), c: 'var(--accent)' },
-                { k: 'savings', n: '💰 儲蓄', b: getBgt(this.data.allocation.savings), c: 'var(--accent2)' },
-                { k: 'investment', n: '📈 投資', b: getBgt(this.data.allocation.investment), c: 'var(--accent3)' },
-                { k: 'entertainment', n: '🎮 娛樂', b: getBgt(this.data.allocation.entertainment), c: 'var(--danger)' }
-            ];
-            
-            bucketEl.innerHTML = B_INFO.map(i => {
-                const used = buckets[i.k] || 0;
-                const pct = Math.min(100, Math.round((used/i.b)*100));
-                const over = used > i.b;
-                return `
-                <div class="w-full">
-                    <div class="flex justify-between text-xs font-black mb-1 w-full"><span class="text-slate-700">${i.n}</span><span class="mono ${over?'text-red-600':'text-emerald-700'}">$${used.toLocaleString()} <span class="text-slate-400 text-[10px]">/ ${i.b.toLocaleString()}</span></span></div>
-                    <div class="progress-track h-2.5 w-full border border-slate-200"><div class="progress-fill h-2.5" style="background:${over?'var(--danger)':i.c}; width:${pct}%"></div></div>
-                </div>`;
-            }).join('');
-        } else {
-            bucketEl.innerHTML = '<p class="text-xs text-slate-400 font-bold text-center py-2">預算追蹤僅支援「月度支出」檢視</p>';
-        }
+        const bucketAnalysisEl = document.getElementById('bucketAnalysis');
+        if (statType !== 'month') { bucketAnalysisEl.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">年度模式不顯示預算追蹤</p>'; return; }
+
+        const exp = filtered.filter(t => t.type === 'expense'), buckets = { responsibility: 0, living: 0, entertainment: 0 };
+        exp.forEach(t => { const c = this.data.categories.find(x => x.id === t.categoryId); buckets[c ? c.bucket : 'living'] = (buckets[c ? c.bucket : 'living'] || 0) + t.amount; });
+        
+        const actualSalary = this.data.actualSalary[timeVal] || 0;
+        const totalFixed = this.calc.monthlyRespTotal(timeVal); // V25 動態算指定月份的歷史預算
+        const netAllocatable = Math.max(0, actualSalary - totalFixed);
+        const livingBudget = Math.round(netAllocatable * (this.data.allocation.living / 100)), entBudget = Math.round(netAllocatable * (this.data.allocation.entertainment / 100));
+        
+        const BUCKET_INFO = { 
+            responsibility: { name: '📋 固定責任', used: buckets.responsibility, budget: totalFixed, color: 'var(--accent2)' }, 
+            living: { name: '🏠 日常花費 (不含責任)', used: buckets.living, budget: livingBudget, color: 'var(--accent)' }, 
+            entertainment: { name: '🎮 娛樂花費', used: buckets.entertainment, budget: entBudget, color: 'var(--danger)' }
+        };
+        
+        if(bucketAnalysisEl) bucketAnalysisEl.innerHTML = Object.entries(BUCKET_INFO).map(([key, info]) => {
+            const pct = info.budget > 0 ? Math.min(100, Math.round((info.used / info.budget) * 100)) : (info.used > 0 ? 100 : 0);
+            const isWarning = pct > 90 && key !== 'responsibility';
+            return `
+            <div class="w-full bg-white p-3 rounded-xl border-2 ${isWarning ? 'border-red-200' : 'border-slate-200'}">
+                <div class="flex justify-between text-xs font-black mb-2 w-full">
+                    <span class="${isWarning ? 'text-red-700' : 'text-slate-700'}">${info.name}</span>
+                    <span class="mono ${isWarning ? 'text-red-700' : 'text-slate-900'}">$${info.used.toLocaleString()} <span class="text-[9px] text-slate-400">/ ${info.budget.toLocaleString()}</span></span>
+                </div>
+                <div class="progress-track h-2 w-full border border-slate-200"><div class="progress-fill h-2" style="background:${isWarning ? 'var(--danger)' : info.color}; width:${pct}%"></div></div>
+            </div>`;
+        }).join('');
     }
 };
 
