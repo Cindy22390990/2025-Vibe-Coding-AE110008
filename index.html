@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Life Dashboard V28</title>
+    <title>Life Dashboard V28.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -77,13 +77,13 @@
             <h3 class="text-base font-black text-slate-900 mb-2">系統確認</h3>
             <p id="confirmMessage" class="text-xs text-slate-600 mb-6 font-bold"></p>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="App.closeConfirm(false)" class="py-3 text-sm rounded-xl btn-solid" style="border-color: var(--border); color: var(--muted); box-shadow: none;">取消</button>
-                <button onclick="App.closeConfirm(true)" id="confirmOkBtn" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確定執行</button>
+                <button type="button" onclick="App.closeConfirm(false)" class="py-3 text-sm rounded-xl btn-solid" style="border-color: var(--border); color: var(--muted); box-shadow: none;">取消</button>
+                <button type="button" onclick="App.closeConfirm(true)" id="confirmOkBtn" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確定執行</button>
             </div>
         </div>
     </div>
 
-    <div id="payRespModal" class="hidden fixed inset-0 modal-overlay z-[70] flex items-center justify-center p-4">
+    <div id="payRespModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
         <div class="modal-box w-full max-w-xs p-6 text-center">
             <h3 class="text-lg font-black text-slate-900 mb-2">繳納固定責任</h3>
             <p id="payRespDesc" class="text-xs text-slate-600 mb-5 font-bold"></p>
@@ -94,14 +94,13 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="App.closeModal('payRespModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
-                <button onclick="App.confirmPayResp()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確認扣款</button>
+                <button type="button" onclick="App.closeModal('payRespModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button type="button" onclick="App.confirmPayResp()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確認扣款</button>
             </div>
         </div>
     </div>
 
-    <!-- 收割結餘彈窗 -->
-    <div id="harvestModal" class="hidden fixed inset-0 modal-overlay z-[70] flex items-center justify-center p-4">
+    <div id="harvestModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
         <div class="modal-box w-full max-w-xs p-6 text-center">
             <div class="text-4xl mb-2">💰</div>
             <h3 class="text-lg font-black text-slate-900 mb-1">收割今日結餘</h3>
@@ -130,14 +129,13 @@
             </div>
             
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="App.closeModal('harvestModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
-                <button onclick="App.confirmHarvest()" class="py-3 text-sm rounded-xl btn-solid text-white bg-emerald-600 border-emerald-700">確定收割</button>
+                <button type="button" onclick="App.closeModal('harvestModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button type="button" onclick="App.confirmHarvest()" class="py-3 text-sm rounded-xl btn-solid text-white bg-emerald-600 border-emerald-700">確定收割</button>
             </div>
         </div>
     </div>
 
-    <!-- FAQ 產品使用說明彈窗 -->
-    <div id="faqModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
+    <div id="faqModal" class="hidden fixed inset-0 modal-overlay z-[90] flex items-center justify-center p-4">
         <div class="modal-box w-full max-w-sm p-6 max-h-[85vh] flex flex-col">
             <h3 class="text-lg font-black text-slate-900 text-center mb-4 flex items-center justify-center gap-2">📖 產品使用說明</h3>
             <div class="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-1 text-xs">
@@ -162,11 +160,10 @@
                     <p class="text-slate-600 font-bold leading-relaxed">金字塔採用「專款專用」原則。它只會讀取您設定為「儲備/預備金」或「長期投資」的帳戶。放在「日常現金流」等著買菜的錢，不會被視為成功存下來的目標款項喔！</p>
                 </div>
             </div>
-            <button onclick="App.closeModal('faqModal')" class="w-full mt-4 py-3 text-sm rounded-xl btn-solid text-slate-600 bg-white">我了解了</button>
+            <button type="button" onclick="App.closeModal('faqModal')" class="w-full mt-4 py-3 text-sm rounded-xl btn-solid text-slate-600 bg-white">我了解了</button>
         </div>
     </div>
 
-    <!-- 登入/初始設定彈窗 -->
     <div id="lockScreenModal" class="fixed inset-0 z-50 flex items-center justify-center p-6 modal-overlay">
         <div class="modal-box w-full max-w-sm p-8 flex flex-col">
             <div class="text-center mb-6">
@@ -184,7 +181,7 @@
                     <input id="setupPassword" type="password" placeholder="留白代表不設密碼" class="inp text-center text-lg tracking-widest h-12" onkeypress="if(event.key==='Enter') App.verifyPassword()">
                 </div>
                 <p id="loginError" class="text-xs font-bold text-red-600 hidden mt-1 text-center bg-red-50 py-1.5 rounded-lg border border-red-200">⚠️ 密碼驗證錯誤，請重新輸入</p>
-                <button onclick="App.verifyPassword()" class="w-full py-3.5 rounded-xl text-sm btn-solid mt-2" style="background: var(--accent); color: white; border-color: var(--text);">確認進入</button>
+                <button type="button" onclick="App.verifyPassword()" class="w-full py-3.5 rounded-xl text-sm btn-solid mt-2" style="background: var(--accent); color: white; border-color: var(--text);">確認進入</button>
             </div>
         </div>
     </div>
@@ -192,10 +189,10 @@
     <header class="shrink-0 px-5 pt-6 pb-4" style="background: linear-gradient(180deg, #ebdcd9 0%, #f3e9e6 100%); border-bottom: 2px solid var(--border);">
         <div class="flex justify-between items-center mb-4">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest mb-0.5 text-slate-500">閒錢分配引擎 V28</p>
+                <p class="text-[10px] font-black uppercase tracking-widest mb-0.5 text-slate-500">閒錢分配引擎 V28.2</p>
                 <h1 class="text-xl font-black text-slate-900 flex items-center gap-1.5"><span id="headerUserName">Life</span> Dashboard</h1>
             </div>
-            <button onclick="App.openSettings()" class="w-10 h-10 rounded-full flex items-center justify-center transition bg-white active:scale-90 border-2 border-slate-800 shadow-sm">
+            <button type="button" onclick="App.openSettings()" class="w-10 h-10 rounded-full flex items-center justify-center transition bg-white active:scale-90 border-2 border-slate-800 shadow-sm">
                 <span class="text-lg">⚙️</span>
             </button>
         </div>
@@ -250,7 +247,7 @@
             
             <!-- 收割按鈕區塊 -->
             <div id="harvestBtnArea" class="hidden w-full mt-2">
-                <button onclick="App.openHarvestModal()" class="w-full py-2 rounded-xl text-xs font-black bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200 transition flex items-center justify-center gap-1 shadow-sm">
+                <button type="button" onclick="App.openHarvestModal()" class="w-full py-2 rounded-xl text-xs font-black bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200 transition flex items-center justify-center gap-1 shadow-sm">
                     <span>💰 收割今日結餘，存入金字塔！</span>
                 </button>
             </div>
@@ -264,14 +261,14 @@
                     <span class="text-xl">🏦</span>
                     <span class="text-sm font-black text-slate-900">實體與數位帳戶</span>
                 </div>
-                <button onclick="App.openAccountModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid text-white" style="background: var(--text); border-color: var(--text);">明細與管理</button>
+                <button type="button" onclick="App.openAccountModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid text-white" style="background: var(--text); border-color: var(--text);">明細與管理</button>
             </div>
 
             <div class="card p-5 space-y-4 border-2 border-slate-800">
                 <div class="flex p-1 rounded-2xl" style="background: var(--surface2); border: 2px solid var(--border);">
-                    <button onclick="App.setTxType('expense')" id="btnExp" class="flex-1 py-2.5 text-sm font-black rounded-xl transition" style="background: var(--accent); color: #ffffff; border: 2px solid var(--text);">支出</button>
-                    <button onclick="App.setTxType('income')" id="btnInc" class="flex-1 py-2.5 text-sm font-black rounded-xl transition border-2 border-transparent" style="color: var(--muted);">收入</button>
-                    <button onclick="App.setTxType('transfer')" id="btnTfr" class="flex-1 py-2.5 text-sm font-black rounded-xl transition border-2 border-transparent" style="color: var(--muted);">轉帳</button>
+                    <button type="button" onclick="App.setTxType('expense')" id="btnExp" class="flex-1 py-2.5 text-sm font-black rounded-xl transition" style="background: var(--accent); color: #ffffff; border: 2px solid var(--text);">支出</button>
+                    <button type="button" onclick="App.setTxType('income')" id="btnInc" class="flex-1 py-2.5 text-sm font-black rounded-xl transition border-2 border-transparent" style="color: var(--muted);">收入</button>
+                    <button type="button" onclick="App.setTxType('transfer')" id="btnTfr" class="flex-1 py-2.5 text-sm font-black rounded-xl transition border-2 border-transparent" style="color: var(--muted);">轉帳</button>
                 </div>
                 
                 <div class="space-y-3">
@@ -298,12 +295,12 @@
                 <div id="categorySelectionArea">
                     <div class="flex justify-between items-center mb-2.5 px-1">
                         <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">分類項目</span>
-                        <button onclick="App.openCategoryManager()" class="text-[10px] font-black px-2 py-1 rounded-md transition border border-slate-300 text-slate-600 bg-white shadow-sm">編輯 ⚙</button>
+                        <button type="button" onclick="App.openCategoryManager()" class="text-[10px] font-black px-2 py-1 rounded-md transition border border-slate-300 text-slate-600 bg-white shadow-sm">編輯 ⚙</button>
                     </div>
                     <div id="categoryGrid" class="grid grid-cols-4 gap-2.5 w-full"></div>
                 </div>
 
-                <button onclick="App.addTransaction()" id="addBtn" class="w-full py-4 rounded-xl text-base btn-solid text-white" style="background: var(--accent);">
+                <button type="button" onclick="App.addTransaction()" id="addBtn" class="w-full py-4 rounded-xl text-base btn-solid text-white" style="background: var(--accent);">
                     <span id="addBtnText">新增支出</span>
                 </button>
             </div>
@@ -371,7 +368,7 @@
                         <span class="text-xs font-black uppercase tracking-widest text-slate-500 px-1 block">本期活躍固定責任</span>
                         <span class="text-[10px] text-slate-400 px-1 font-bold">打勾將自動寫入記帳明細</span>
                     </div>
-                    <button onclick="App.openRespModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增</button>
+                    <button type="button" onclick="App.openRespModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增</button>
                 </div>
                 <div id="respList" class="space-y-2.5 w-full"></div>
             </div>
@@ -381,7 +378,7 @@
                     <div>
                         <span class="text-xs font-black uppercase tracking-widest text-slate-500 px-1 block">本期活躍家庭支援</span>
                     </div>
-                    <button onclick="App.openFamilyModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增</button>
+                    <button type="button" onclick="App.openFamilyModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增</button>
                 </div>
                 <div id="familyMemberList" class="space-y-2.5 w-full"></div>
             </div>
@@ -402,7 +399,7 @@
                     <h2 class="text-xs font-black uppercase tracking-widest text-slate-600">🧱 跨年度防護金字塔</h2>
                     <p class="text-[10px] text-slate-500 font-bold mt-0.5">專款專用：僅讀取「儲備/投資」帳戶</p>
                 </div>
-                <button onclick="App.openGoalModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增目標</button>
+                <button type="button" onclick="App.openGoalModal()" class="text-[10px] font-black px-3 py-1.5 rounded-lg btn-solid bg-white text-slate-800">＋ 新增目標</button>
             </div>
             <div id="pyramidGoalsContainer" class="space-y-4 w-full"></div>
         </div>
@@ -417,8 +414,8 @@
             </div>
 
             <div class="flex gap-4 border-b-2 pb-2 w-full border-slate-200">
-                <button onclick="App.toggleChartType('expense')" id="chartTypeExp" class="text-sm font-black pb-1.5 border-b-4 transition border-slate-800 text-slate-900">支出分析</button>
-                <button onclick="App.toggleChartType('income')" id="chartTypeInc" class="text-sm font-black pb-1.5 border-b-4 border-transparent transition text-slate-400">收入分析</button>
+                <button type="button" onclick="App.toggleChartType('expense')" id="chartTypeExp" class="text-sm font-black pb-1.5 border-b-4 transition border-slate-800 text-slate-900">支出分析</button>
+                <button type="button" onclick="App.toggleChartType('income')" id="chartTypeInc" class="text-sm font-black pb-1.5 border-b-4 border-transparent transition text-slate-400">收入分析</button>
             </div>
 
             <div class="card p-5 text-center relative w-full border-2 border-slate-800" style="min-height: 280px;">
@@ -440,19 +437,19 @@
 
     <nav class="shrink-0 pb-safe bg-white w-full border-t-2 border-slate-200 z-40">
         <div class="flex h-16 w-full justify-around items-center">
-            <button onclick="App.switchTab('view-home')" class="nav-btn active flex-1 flex flex-col items-center justify-center gap-1" data-target="view-home">
+            <button type="button" onclick="App.switchTab('view-home')" class="nav-btn active flex-1 flex flex-col items-center justify-center gap-1" data-target="view-home">
                 <div class="nav-icon text-xl transition grayscale opacity-50">📝</div>
                 <span class="nav-label text-[10px] font-black transition text-slate-400">記帳</span>
             </button>
-            <button onclick="App.switchTab('view-resp')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-resp">
+            <button type="button" onclick="App.switchTab('view-resp')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-resp">
                 <div class="nav-icon text-xl transition grayscale opacity-50">📋</div>
                 <span class="nav-label text-[10px] font-black transition text-slate-400">責任</span>
             </button>
-            <button onclick="App.switchTab('view-goals')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-goals">
+            <button type="button" onclick="App.switchTab('view-goals')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-goals">
                 <div class="nav-icon text-xl transition grayscale opacity-50">🔮</div>
                 <span class="nav-label text-[10px] font-black transition text-slate-400">目標</span>
             </button>
-            <button onclick="App.switchTab('view-stats')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-stats">
+            <button type="button" onclick="App.switchTab('view-stats')" class="nav-btn flex-1 flex flex-col items-center justify-center gap-1" data-target="view-stats">
                 <div class="nav-icon text-xl transition grayscale opacity-50">📊</div>
                 <span class="nav-label text-[10px] font-black transition text-slate-400">報表</span>
             </button>
@@ -460,11 +457,11 @@
     </nav>
 
     <!-- 系統設定 Modal -->
-    <div id="settingsModal" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+    <div id="settingsModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
         <div class="modal-box w-full max-w-xs p-6 max-h-[85vh] flex flex-col">
             <h3 class="text-lg font-black text-slate-900 text-center mb-3">⚙️ 系統設定</h3>
             
-            <button onclick="App.openModal('faqModal')" class="w-full py-2.5 mb-4 rounded-xl text-xs font-black bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition flex items-center justify-center gap-1 shadow-sm">
+            <button type="button" onclick="App.openModal('faqModal')" class="w-full py-2.5 mb-4 rounded-xl text-xs font-black bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition flex items-center justify-center gap-1 shadow-sm">
                 <span>📖 閱讀產品使用說明 (FAQ)</span>
             </button>
 
@@ -495,12 +492,139 @@
                 </div>
 
                 <div class="mt-2 pt-3 border-t-2 border-slate-100">
-                    <button onclick="App.resetAllData()" class="w-full text-xs font-black py-2.5 rounded-xl transition bg-rose-50 text-rose-600 border border-rose-200">⚠️ 重置所有系統資料</button>
+                    <button type="button" onclick="App.resetAllData()" class="w-full text-xs font-black py-2.5 rounded-xl transition bg-rose-50 text-rose-600 border border-rose-200">⚠️ 重置所有系統資料</button>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3 mt-4 pt-4 shrink-0 border-t-2 border-slate-100">
-                <button onclick="App.closeSettings()" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
-                <button onclick="App.saveSettings()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
+                <button type="button" onclick="App.closeSettings()" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button type="button" onclick="App.saveSettings()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 帳戶管理 Modals -->
+    <div id="accountOverviewModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-sm p-6 max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black text-slate-900">🏦 帳戶管理</h3>
+                <button type="button" onclick="App.openAccountEditModal()" class="text-xs font-black px-3 py-1.5 rounded-lg btn-solid bg-slate-800 text-white">＋ 新增</button>
+            </div>
+            <div id="accountListContainer" class="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1"></div>
+            <button type="button" onclick="App.closeModal('accountOverviewModal')" class="w-full mt-4 py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">關閉</button>
+        </div>
+    </div>
+
+    <div id="accountModal" class="hidden fixed inset-0 modal-overlay z-[90] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-5" id="accModalTitle">編輯帳戶</h3>
+            <input type="hidden" id="accId">
+            <div class="space-y-4 mb-5 text-xs">
+                <div><label class="text-slate-700 mb-1.5 block font-black">帳戶名稱</label><input id="accName" class="inp" placeholder="例: 主要薪轉戶"></div>
+                <div>
+                    <label class="text-slate-700 mb-1.5 block font-black">屬性 (資金隔離機制)</label>
+                    <select id="accType" class="inp text-xs pr-8">
+                        <option value="cashflow">💵 日常現金流 (參與生存額度)</option>
+                        <option value="saving">🛡️ 儲備/預備金 (不計入日常)</option>
+                        <option value="invest">📈 長期投資 (不計入日常)</option>
+                    </select>
+                </div>
+                <div><label class="text-slate-700 mb-1.5 block font-black">初始餘額</label><input id="accBalance" type="number" class="inp mono font-black" placeholder="0"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="App.closeModal('accountModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button type="button" onclick="App.saveAccount()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
+            </div>
+            <button type="button" onclick="App.deleteAccountCurrent()" id="btnDelAcc" class="hidden w-full mt-3 py-2.5 text-xs font-black rounded-xl transition bg-rose-50 text-rose-600 border border-rose-200">刪除此帳戶</button>
+        </div>
+    </div>
+
+    <!-- 責任管理 Modals -->
+    <div id="respModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-4" id="respModalTitle">新增固定責任</h3>
+            <input type="hidden" id="respId">
+            <div class="space-y-3.5 mb-5 text-xs">
+                <div><label class="text-slate-700 mb-1 block font-black">項目名稱</label><input id="respName" class="inp" placeholder="例：牙套分期"></div>
+                <div><label class="text-slate-700 mb-1 block font-black">每月金額</label><input id="respMonthly" type="number" class="inp mono font-black" placeholder="8000"></div>
+                <div>
+                    <label class="text-slate-700 mb-1 block font-black">責任類型</label>
+                    <select id="respType" class="inp text-sm pr-8">
+                        <option value="debt">💳 醫療/分期/學貸</option>
+                        <option value="insurance">🛡️ 保險保費</option>
+                        <option value="subscription">📱 訂閱與學習</option>
+                        <option value="other">📌 其他</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">開始月份</label><input type="month" id="respStart" class="inp px-2 text-xs h-10"></div>
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">結束月份(可選)</label><input type="month" id="respEnd" class="inp px-2 text-xs h-10"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="App.closeModal('respModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button type="button" onclick="App.saveResp()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="familyModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-base font-black text-slate-900 text-center mb-4" id="famModalTitle">設定家庭支援</h3>
+            <input type="hidden" id="famId">
+            <div class="space-y-3 mb-5 text-xs">
+                <div><label class="text-slate-700 mb-1 block font-black">成員/項目名稱</label><input id="famName" class="inp" placeholder="例: 孝親費"></div>
+                <div><label class="text-slate-700 mb-1 block font-black">每月金額 ($)</label><input id="famMonthly" type="number" class="inp mono font-black" placeholder="4000"></div>
+                <div class="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">開始月份</label><input type="month" id="famStart" class="inp px-2 text-xs h-10"></div>
+                    <div><label class="text-slate-500 mb-1 block font-bold text-[10px]">結束月份(可選)</label><input type="month" id="famEnd" class="inp px-2 text-xs h-10"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="App.closeModal('familyModal')" class="py-2.5 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button type="button" onclick="App.saveFamilyMember()" class="py-2.5 text-sm rounded-xl btn-solid text-white bg-slate-800">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分類管理 Modal -->
+    <div id="categoryModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6 max-h-[85vh] flex flex-col">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-4">管理分類</h3>
+            <div class="card-inner p-3.5 mb-4 flex-shrink-0 text-xs space-y-3 bg-white border border-slate-200">
+                <div class="grid grid-cols-6 gap-1.5 max-h-24 overflow-y-auto no-scrollbar mb-1" id="iconPicker"></div>
+                <input id="newCatName" class="inp text-sm" placeholder="分類名稱">
+                <select id="newCatBucket" class="inp text-xs pr-8">
+                    <option value="living">🏠 生活分配</option>
+                    <option value="entertainment">🎮 娛樂分配</option>
+                    <option value="savings">💰 儲蓄準備</option>
+                    <option value="investment">📈 長期投資</option>
+                </select>
+                <button type="button" onclick="App.addNewCategory()" class="w-full py-3 text-xs rounded-xl btn-solid text-white bg-slate-800">＋ 新增此分類</button>
+            </div>
+            <div id="categoryListEdit" class="space-y-2 overflow-y-auto flex-1 no-scrollbar pr-1 w-full"></div>
+            <button type="button" onclick="App.closeModal('categoryModal')" class="w-full mt-4 py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">完成</button>
+        </div>
+    </div>
+
+    <!-- 新增金字塔目標 Modal -->
+    <div id="goalModal" class="hidden fixed inset-0 modal-overlay z-[80] flex items-center justify-center p-4">
+        <div class="modal-box w-full max-w-xs p-6">
+            <h3 class="text-lg font-black text-slate-900 text-center mb-5">新增防護目標</h3>
+            <div class="space-y-4 mb-5 text-xs">
+                <div><label class="text-slate-700 mb-1.5 block font-black">目標項目名稱</label><input id="goalName" class="inp" placeholder="例:半年預備金"></div>
+                <div><label class="text-slate-700 mb-1.5 block font-black">目標金額</label><input id="goalAmount" type="number" class="inp mono font-black" placeholder="50000" onkeypress="if(event.key==='Enter') App.saveGoal()"></div>
+                <div>
+                    <label class="text-slate-700 mb-1.5 block font-black">金字塔防衛層級</label>
+                    <select id="goalTier" class="inp text-xs pr-8">
+                        <option value="1">🧱 第一層：安全預備金 (先修)</option>
+                        <option value="2">🛡️ 第二層：大額負擔 (中階)</option>
+                        <option value="3">🚀 第三層：夢想成長 (高階)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" onclick="App.closeModal('goalModal')" class="py-3 text-sm rounded-xl btn-solid text-slate-600" style="box-shadow: none;">取消</button>
+                <button type="button" onclick="App.saveGoal()" class="py-3 text-sm rounded-xl btn-solid text-white bg-slate-800">確認</button>
             </div>
         </div>
     </div>
@@ -508,11 +632,10 @@
     <script>
     /**
      * ═══════════════════════════════════════
-     * LIFE DASHBOARD V28 CORE 
-     * 亮點：
-     * 1. 統一文字標示：使用「閒錢預算規劃」、「生活閒錢雷達」。
-     * 2. 完美 FAQ：內建 5 點專業說明書。
-     * 3. 收割機 Bug 修復：收割加上 isHarvest 標籤，完美連動雷達並歸零結餘。
+     * LIFE DASHBOARD V28.2 CORE (防禦裝甲版)
+     * 解決舊帳戶資料可能導致「帳戶列表」渲染失敗，
+     * 進而導致按鈕點擊完全無反應的問題。
+     * 所有 Modal 層級已強制提升確保絕對顯示。
      * ═══════════════════════════════════════
      */
     const App = {
@@ -722,13 +845,15 @@
             if (id === 'view-goals') { this.renderSavingsChart(); }
         },
 
-        openAccountOverviewModal() { this.openModal('accountOverviewModal'); this.renderAccountOverview(); },
+        openAccountModal() { 
+            this.openModal('accountOverviewModal'); 
+            this.renderAccountOverview(); 
+        },
         openAccountEditModal() {
             this.openModal('accountModal'); document.getElementById('accModalTitle').innerText = "新增帳戶";
             document.getElementById('accId').value = ''; document.getElementById('accName').value = ''; document.getElementById('accBalance').value = '';
             document.getElementById('accType').value = 'cashflow'; document.getElementById('btnDelAcc').classList.add('hidden');
         },
-        openAccountModal() { this.openAccountOverviewModal(); },
         editAccount(id) {
             const acc = this.data.accounts.find(a => a.id === id); if (!acc) return;
             this.openModal('accountModal'); document.getElementById('accModalTitle').innerText = "編輯帳戶";
@@ -781,14 +906,10 @@
                 accId = document.getElementById('tfrFrom').value; targetAccId = document.getElementById('tfrTo').value;
                 if (!accId || !targetAccId) return this.toast('請選擇轉出與轉入帳戶！');
                 if (accId === targetAccId) return this.toast('轉出與轉入不可為同一個帳戶！');
-                
-                // V28 防護鎖：檢查餘額
                 if (this.calc.accountBalance(accId) < amt) return this.toast(`⚠️ 轉出帳戶餘額不足！`);
                 note = document.getElementById('noteInput').value.trim() || '資金轉帳';
             } else {
                 accId = document.getElementById('accountSelect').value; if (!accId) return this.toast('請選擇一個帳戶！');
-                
-                // V28 防護鎖：支出檢查餘額
                 if (type === 'expense' && this.calc.accountBalance(accId) < amt) return this.toast(`⚠️ 扣款帳戶餘額不足！`);
                 
                 const catFallback = this.data.categories.find(c => c.id === this.ui.selectedCatId);
@@ -814,8 +935,15 @@
 
         updateAllRenders() {
             document.getElementById('headerUserName').textContent = this.data.userName;
-            this.renderHeader(); this.renderAccountOverview(); this.updateAccountSelects(); this.renderCategoryGrid(); this.renderTransactions();
-            this.renderPyramidGoals(); this.renderRespList(); this.renderSurvivalBar(); this.renderFamilySupportCenter();
+            this.renderHeader(); 
+            this.renderAccountOverview(); 
+            this.updateAccountSelects(); 
+            this.renderCategoryGrid(); 
+            this.renderTransactions();
+            this.renderPyramidGoals(); 
+            this.renderRespList(); 
+            this.renderSurvivalBar(); 
+            this.renderFamilySupportCenter();
             this.calculateNetBudget(); 
         },
 
@@ -838,7 +966,10 @@
             container.innerHTML = this.data.accounts.map(acc => {
                 const bal = this.calc.accountBalance(acc.id);
                 const col = bal < 0 ? 'text-red-600' : 'text-slate-900';
-                const meta = this.constants.ACC_META[acc.type || 'cashflow'];
+                
+                // V28.2 防禦裝甲：確保 meta 絕對不會是 undefined
+                const meta = this.constants.ACC_META[acc.type] || this.constants.ACC_META['cashflow'];
+                
                 return `
                 <div onclick="App.editAccount('${acc.id}')" class="card-inner p-3 cursor-pointer transition hover:bg-slate-50 flex items-center justify-between border-slate-200 bg-white">
                     <div class="flex items-center gap-3">
@@ -864,7 +995,7 @@
             let visibleCats = this.data.categories.filter(c => c.id !== 'cat_resp_sys'); 
             if (visibleCats.length && !visibleCats.some(c => c.id === this.ui.selectedCatId)) { this.ui.selectedCatId = visibleCats[0].id; }
             grid.innerHTML = visibleCats.map(c => `
-                <button onclick="App.ui.selectedCatId='${c.id}'; App.renderCategoryGrid()" class="flex flex-col items-center justify-center p-3 rounded-2xl btn-solid" style="${this.ui.selectedCatId===c.id?'background:var(--accent);color:#ffffff;':'background:#ffffff;color:var(--text);box-shadow:none;border-color:var(--border);'}">
+                <button type="button" onclick="App.ui.selectedCatId='${c.id}'; App.renderCategoryGrid()" class="flex flex-col items-center justify-center p-3 rounded-2xl btn-solid" style="${this.ui.selectedCatId===c.id?'background:var(--accent);color:#ffffff;':'background:#ffffff;color:var(--text);box-shadow:none;border-color:var(--border);'}">
                     <span class="text-2xl mb-1">${c.icon}</span><span style="font-size:10px;font-weight:900;">${c.name}</span>
                 </button>`).join('');
         },
@@ -886,12 +1017,11 @@
                 return `
                 <div class="flex items-center justify-between card p-3 w-full border-slate-200">
                     <div class="flex items-center gap-3 overflow-hidden"><div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 bg-slate-50 border border-slate-100">${iconHtml}</div><div class="min-w-0">${descHtml}</div></div>
-                    <div class="flex items-center gap-2 shrink-0"><span class="mono font-black text-sm ${amtClass}">${sign}$${t.amount.toLocaleString()}</span><button onclick="App.deleteTrans('${t.id}')" class="w-7 h-7 rounded-full flex items-center justify-center text-rose-300 hover:bg-rose-100 hover:text-red-600 transition active:scale-90 font-black text-lg">×</button></div>
+                    <div class="flex items-center gap-2 shrink-0"><span class="mono font-black text-sm ${amtClass}">${sign}$${t.amount.toLocaleString()}</span><button type="button" onclick="App.deleteTrans('${t.id}')" class="w-7 h-7 rounded-full flex items-center justify-center text-rose-300 hover:bg-rose-100 hover:text-red-600 transition active:scale-90 font-black text-lg">×</button></div>
                 </div>`;
             }).join('');
         },
 
-        // V28 雷達計算：支援 isHarvest 特殊標籤，使收割能完美歸零結餘
         renderSurvivalBar() {
             const cycle = this.getCycleDates();
             const now = new Date();
@@ -916,7 +1046,6 @@
             this.data.transactions.forEach(t => {
                 const d = new Date(t.date);
                 if (d >= cycle.start && d <= cycle.end) {
-                    // 一般生活支出
                     if (t.type === 'expense') {
                         const c = this.data.categories.find(x => x.id === t.categoryId);
                         if (c && c.bucket === 'living') {
@@ -924,7 +1053,6 @@
                             if (d.toDateString() === todayStr) todaySpent += t.amount;
                         }
                     }
-                    // V28 新增：收割轉帳視同生活支出，確實鎖定預算
                     if (t.type === 'transfer' && t.isHarvest) {
                         cycleSpent += t.amount;
                         if (d.toDateString() === todayStr) todaySpent += t.amount;
@@ -991,7 +1119,6 @@
             const input = document.getElementById('harvestAmount');
             input.value = this.ui.maxHarvest;
             
-            // Populate accounts for harvesting
             const cashFlowAccs = this.data.accounts.filter(a => a.type === 'cashflow');
             const savingAccs = this.data.accounts.filter(a => a.type === 'saving' || a.type === 'invest');
             
@@ -1021,13 +1148,12 @@
             if (!fromAcc || !toAcc) return this.toast('請選擇轉出與轉入帳戶');
             if (this.calc.accountBalance(fromAcc) < val) return this.toast('⚠️ 扣款帳戶餘額不足，請先補足現金！');
 
-            // 建立一筆帶有 isHarvest 標籤的轉帳紀錄
             const txId = 'tx_' + Date.now().toString(36);
             this.data.transactions.unshift({
                 id: txId, amount: val, type: 'transfer',
                 accountId: fromAcc, targetAccountId: toAcc,
                 note: '💰 收割今日結餘', date: new Date().toISOString(),
-                isHarvest: true // 關鍵防護標記
+                isHarvest: true 
             });
             
             this.saveData();
@@ -1083,8 +1209,6 @@
         
         confirmPayResp() {
             const accId = document.getElementById('payRespAccount').value; if (!accId) return this.toast('請選擇扣款帳戶');
-            
-            // 防護鎖
             if (this.calc.accountBalance(accId) < this.ui.pendingResp.amount) return this.toast('⚠️ 扣款帳戶餘額不足！');
 
             const ym = this.getCurrentYm(), txId = 'tx_' + Date.now().toString(36);
@@ -1135,7 +1259,7 @@
                 return `
                 <div class="card-inner p-3 flex items-center justify-between bg-white border-slate-200">
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <button onclick="App.clickPayResp('${r.id}', 'resp', '${r.name}', ${r.monthly})" class="w-6 h-6 shrink-0 rounded border-2 flex items-center justify-center transition ${isCleared ? 'bg-slate-800 border-slate-800 text-white' : 'border-slate-300 text-transparent'}"><span class="text-sm font-black">✓</span></button>
+                        <button type="button" onclick="App.clickPayResp('${r.id}', 'resp', '${r.name}', ${r.monthly})" class="w-6 h-6 shrink-0 rounded border-2 flex items-center justify-center transition ${isCleared ? 'bg-slate-800 border-slate-800 text-white' : 'border-slate-300 text-transparent'}"><span class="text-sm font-black">✓</span></button>
                         <div class="truncate">
                             <p class="font-black text-xs text-slate-800 truncate ${isCleared ? 'line-through opacity-50' : ''}">${this.constants.RESP_ICONS[r.type]||'📌'} ${r.name}</p>
                             <p class="text-[9px] font-bold text-slate-400 mt-0.5">${periodStr}</p>
@@ -1143,8 +1267,8 @@
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0 pl-1">
                         <span class="mono font-black text-sm text-slate-900 ${isCleared ? 'opacity-50' : ''}">$${r.monthly.toLocaleString()}</span>
-                        <button onclick="App.editResp('${r.id}')" class="text-slate-400 hover:text-slate-700 font-black text-sm p-1 ml-1">✏️</button>
-                        <button onclick="App.deleteResp('${r.id}')" class="text-slate-300 hover:text-red-500 font-black text-lg p-1">×</button>
+                        <button type="button" onclick="App.editResp('${r.id}')" class="text-slate-400 hover:text-slate-700 font-black text-sm p-1 ml-1">✏️</button>
+                        <button type="button" onclick="App.deleteResp('${r.id}')" class="text-slate-300 hover:text-red-500 font-black text-lg p-1">×</button>
                     </div>
                 </div>`;
             }).join('');
@@ -1190,7 +1314,7 @@
                 return `
                 <div class="card-inner p-3 flex items-center justify-between bg-white border-slate-200">
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <button onclick="App.clickPayResp('${m.id}', 'fam', '家庭支援: ${m.name}', ${m.monthlySupport})" class="w-6 h-6 shrink-0 rounded border-2 flex items-center justify-center transition ${isCleared ? 'bg-slate-800 border-slate-800 text-white' : 'border-slate-300 text-transparent'}"><span class="text-sm font-black">✓</span></button>
+                        <button type="button" onclick="App.clickPayResp('${m.id}', 'fam', '家庭支援: ${m.name}', ${m.monthlySupport})" class="w-6 h-6 shrink-0 rounded border-2 flex items-center justify-center transition ${isCleared ? 'bg-slate-800 border-slate-800 text-white' : 'border-slate-300 text-transparent'}"><span class="text-sm font-black">✓</span></button>
                         <div class="truncate">
                             <p class="font-black text-xs text-slate-800 truncate ${isCleared ? 'line-through opacity-50' : ''}">👨‍👩‍👧 ${m.name}</p>
                             <p class="text-[9px] font-bold text-slate-400 mt-0.5">${periodStr}</p>
@@ -1198,26 +1322,29 @@
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0 pl-1">
                         <span class="mono font-black text-sm text-slate-900 ${isCleared ? 'opacity-50' : ''}">$${m.monthlySupport.toLocaleString()}</span>
-                        <button onclick="App.editFamilyMember('${m.id}')" class="text-slate-400 hover:text-slate-700 font-black text-sm p-1 ml-1">✏️</button>
-                        <button onclick="App.deleteFamilyMember('${m.id}')" class="text-slate-300 hover:text-red-500 font-black text-lg p-1">×</button>
+                        <button type="button" onclick="App.editFamilyMember('${m.id}')" class="text-slate-400 hover:text-slate-700 font-black text-sm p-1 ml-1">✏️</button>
+                        <button type="button" onclick="App.deleteFamilyMember('${m.id}')" class="text-slate-300 hover:text-red-500 font-black text-lg p-1">×</button>
                     </div>
                 </div>`;
             }).join('');
         },
 
-        openGoalModal() { this.openModal('goalModal'); },
+        openGoalModal() { 
+            document.getElementById('goalName').value = '';
+            document.getElementById('goalAmount').value = '';
+            this.openModal('goalModal'); 
+        },
         saveGoal() {
             const name = document.getElementById('goalName').value.trim(), target = parseInt(document.getElementById('goalAmount').value);
             if (!name || isNaN(target) || target <= 0) return this.toast('請填寫正確目標名稱與金額');
             this.data.goals.push({ id: 'goal_' + Date.now().toString(36), name, target, tier: parseInt(document.getElementById('goalTier').value), celebrated: false });
-            this.saveData(); this.closeModal('goalModal'); document.getElementById('goalName').value = ''; document.getElementById('goalAmount').value = ''; this.renderPyramidGoals(); this.checkGoals(true);
+            this.saveData(); this.closeModal('goalModal'); this.renderPyramidGoals(); this.checkGoals(true);
         },
         deleteGoal(id) { this.confirm('確定移除此防護目標？', () => { this.data.goals = this.data.goals.filter(g => g.id !== id); this.saveData(); this.renderPyramidGoals(); }); },
         renderPyramidGoals() {
             const container = document.getElementById('pyramidGoalsContainer'); if (!container) return;
             if (!this.data.goals.length) { container.innerHTML = `<div class="text-center py-10 opacity-40"><p class="text-xs font-bold text-slate-500">尚無金字塔目標</p></div>`; return; }
             
-            // V28 金字塔資產只計算「儲備與投資帳戶」
             let pool = this.calc.pyramidAssets(); 
             
             const processed = [...this.data.goals].sort((a,b) => a.tier - b.tier).map(g => {
@@ -1238,7 +1365,7 @@
                                     <span class="font-black text-slate-800 truncate">${g.name}</span>
                                     <div class="flex items-center gap-1">
                                         <span class="text-[9px] font-black px-2 py-0.5 rounded-md" style="${g.isCompleted ? 'background:var(--text);color:white;':'background:var(--border);color:var(--muted);'}">${g.isCompleted ? '已儲滿' : '解鎖中'}</span>
-                                        <button onclick="App.deleteGoal('${g.id}')" class="text-slate-400 font-black px-1">×</button>
+                                        <button type="button" onclick="App.deleteGoal('${g.id}')" class="text-slate-400 font-black px-1">×</button>
                                     </div>
                                 </div>
                                 <div class="progress-track h-2 mb-1.5"><div class="progress-fill h-2 bg-slate-800" style="width:${g.progress}%"></div></div>
@@ -1262,7 +1389,6 @@
             const canvas = document.getElementById('savingsBarChart'); if (!canvas) return;
             const ctx = canvas.getContext('2d');
             
-            // 計算近 6 個月每個月從 cashflow 轉移到 saving/invest 的錢 (包含收割與手動)
             const now = new Date();
             const labels = [];
             const dataPts = [];
@@ -1399,7 +1525,7 @@
             document.getElementById('categoryListEdit').innerHTML = this.data.categories.filter(c => c.id !== 'cat_resp_sys').map(c => `
                 <div class="flex justify-between items-center p-2 rounded-xl text-xs mb-2 bg-white border border-slate-200">
                     <div class="flex items-center gap-2"><span class="text-lg">${c.icon}</span><span class="font-black text-slate-800">${c.name}</span><span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-black">${c.bucket}</span></div>
-                    <button onclick="App.deleteCategory('${c.id}')" class="text-slate-400 font-black text-lg px-2">×</button>
+                    <button type="button" onclick="App.deleteCategory('${c.id}')" class="text-slate-400 font-black text-lg px-2">×</button>
                 </div>`).join('');
         },
         addNewCategory() {
