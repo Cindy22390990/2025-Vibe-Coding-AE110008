@@ -273,17 +273,17 @@
                 </div>
                 
                 <div class="space-y-3">
-                    <div class="flex gap-2 w-full">
-                        <div id="accountSelectArea" class="flex-1 relative">
+                    <div id="dynamicInputArea" class="flex flex-row gap-2 w-full">
+                        <div id="dateArea" class="flex-1 relative order-1">
+                            <input id="dateInput" type="date" class="inp text-sm h-12 w-full font-mono text-center">
+                        </div>
+                        <div id="accountSelectArea" class="flex-1 relative order-2">
                             <select id="accountSelect" class="inp text-sm h-12 w-full"></select>
                         </div>
-                        <div id="transferAccountsArea" class="hidden flex-1 relative flex rounded-[14px] border-2 border-[#e7d5d1] bg-[#fdfaf9] overflow-hidden">
+                        <div id="transferAccountsArea" class="hidden flex-1 relative flex rounded-[14px] border-2 border-[#e7d5d1] bg-[#fdfaf9] overflow-hidden order-1">
                             <select id="tfrFrom" class="inp text-xs h-full flex-1 px-2 border-0 bg-transparent rounded-none" style="min-height: 44px;"></select>
                             <div class="flex items-center justify-center px-1 bg-slate-100/50"><span class="text-[10px] font-black text-slate-400">➡️</span></div>
                             <select id="tfrTo" class="inp text-xs h-full flex-1 px-2 border-0 bg-transparent rounded-none" style="min-height: 44px;"></select>
-                        </div>
-                        <div class="flex-1 relative">
-                            <input id="dateInput" type="date" class="inp text-sm h-12 w-full font-mono text-center">
                         </div>
                     </div>
 
@@ -906,6 +906,22 @@
             
             document.getElementById('addBtnText').textContent = isExp ? '新增支出' : (isInc ? '新增收入' : '執行轉帳');
             document.getElementById('addBtn').style.background = isExp ? 'var(--accent)' : (isInc ? 'var(--accent2)' : 'var(--accent3)');
+            
+            const dynArea = document.getElementById('dynamicInputArea');
+            const dateArea = document.getElementById('dateArea');
+            
+            if (isTfr) {
+                dynArea.classList.remove('flex-row');
+                dynArea.classList.add('flex-col');
+                dateArea.classList.remove('order-1');
+                dateArea.classList.add('order-2');
+            } else {
+                dynArea.classList.remove('flex-col');
+                dynArea.classList.add('flex-row');
+                dateArea.classList.remove('order-2');
+                dateArea.classList.add('order-1');
+            }
+
             document.getElementById('accountSelectArea').classList.toggle('hidden', isTfr);
             document.getElementById('transferAccountsArea').classList.toggle('hidden', !isTfr);
             document.getElementById('categorySelectionArea').classList.toggle('hidden', isTfr);
