@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Life Dashboard V28.3</title>
+    <title>Life Dashboard V28.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -189,7 +189,7 @@
     <header class="shrink-0 px-5 pt-6 pb-4" style="background: linear-gradient(180deg, #ebdcd9 0%, #f3e9e6 100%); border-bottom: 2px solid var(--border);">
         <div class="flex justify-between items-center mb-4">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-widest mb-0.5 text-slate-500">閒錢分配引擎 V28.3</p>
+                <p class="text-[10px] font-black uppercase tracking-widest mb-0.5 text-slate-500">閒錢分配引擎 V28.4</p>
                 <h1 class="text-xl font-black text-slate-900 flex items-center gap-1.5"><span id="headerUserName">Life</span> Dashboard</h1>
             </div>
             <button type="button" onclick="App.openSettings()" class="w-10 h-10 rounded-full flex items-center justify-center transition bg-white active:scale-90 border-2 border-slate-800 shadow-sm">
@@ -708,7 +708,7 @@
     <script>
     /**
      * ═══════════════════════════════════════
-     * LIFE DASHBOARD V28.3 CORE
+     * LIFE DASHBOARD V28.4 CORE
      * ═══════════════════════════════════════
      */
     const App = {
@@ -994,21 +994,8 @@
             document.getElementById('addBtnText').textContent = isExp ? '新增支出' : (isInc ? '新增收入' : '執行轉帳');
             document.getElementById('addBtn').style.background = isExp ? 'var(--accent)' : (isInc ? 'var(--accent2)' : 'var(--accent3)');
             
-            const dynArea = document.getElementById('dynamicInputArea');
-            const dateArea = document.getElementById('dateArea');
+            // 修復：已移除導致轉換失敗的 dynamicInputArea 舊排版切換程式碼
             
-            if (isTfr) {
-                dynArea.classList.remove('flex-row');
-                dynArea.classList.add('flex-col');
-                dateArea.classList.remove('order-1');
-                dateArea.classList.add('order-2');
-            } else {
-                dynArea.classList.remove('flex-col');
-                dynArea.classList.add('flex-row');
-                dateArea.classList.remove('order-2');
-                dateArea.classList.add('order-1');
-            }
-
             document.getElementById('accountSelectArea').classList.toggle('hidden', isTfr);
             document.getElementById('transferAccountsArea').classList.toggle('hidden', !isTfr);
             document.getElementById('categorySelectionArea').classList.toggle('hidden', isTfr);
